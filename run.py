@@ -9,15 +9,36 @@ config.sat_backend = "kissat"
 # Encoding that will store all of your constraints
 E = Encoding()
 
+#
+gen_count = input("number of generations: ")
+gen_last_count = input("number of people in generation 3: ")
+
+def create_family_tree(gen_count, gen_last_count):
+    family_tree = []
+    current_id = 1
+    
+    # Calculate the number of people in each generation, starting from the last generation
+    gen_sizes = [gen_last_count]
+    for _ in range(gen_count - 1):
+        # Ensure each previous generation has enough people to be parents of the next generation
+        gen_sizes.insert(0, (gen_sizes[0] + 1) // 2)
+    
+    # Generate unique IDs for each generation
+    for size in gen_sizes:
+        generation = [current_id + i for i in range(size)]
+        family_tree.append(generation)
+        current_id += size
+    
+    return family_tree
+
 # To create propositions, create classes for them first, annotated with "@proposition" and the Encoding
 @proposition(E)
-class BasicPropositions:
-
-    def __init__(self, data):
-        self.data = data
+class Char:
+    def __init__(self, char,):
+        self.char = char
 
     def _prop_name(self):
-        return f"A.{self.data}"
+        return f"A.{self.char}"
 
 
 # Different classes for propositions are useful because this allows for more dynamic constraint creation
@@ -36,11 +57,10 @@ class FancyPropositions:
         return f"A.{self.data}"
 
 # Call your variables whatever you want
-a = BasicPropositions("a")
-b = BasicPropositions("b")   
-c = BasicPropositions("c")
-d = BasicPropositions("d")
-e = BasicPropositions("e")
+g = Char("Generation")
+f = Char("Female")   
+a = Char("Affected")
+r = Char("Blood Relative")
 # At least one of these will be true
 x = FancyPropositions("x")
 y = FancyPropositions("y")
