@@ -9,20 +9,41 @@ config.sat_backend = "kissat"
 # Encoding that will store all of your constraints
 E = Encoding()
 PEDIGREE={} 
-IFAMILY={} #immediate family (siblings+parents)
-PERSON={} #id, chars
+#immediate family (siblings+parents)
+IFAMILY={
+    "parents":[],
+    "siblings":[]
+}
+PERSON={
+    "id",
+    "char"=[]
+} #id, chars
 CHARACTERISTIC=[] #characteristics a person have (affected or not, geneder, blood relation,generation) 
 #
 def create_person(id, gen, gender, affected, br):
     char=[gender, affected, br]
-    person={
+    PERSON={
         "id":id,
         "gen"=gen,
         "gender"=char[0],
         "affected"=char[1],
         "br"=char[2]
     }
-def create_ifam():
+def create_ifam(person1, person2, person3=None):
+    if person3 is None:
+        # Case with 2 arguments: Add both to siblings if not already in list
+        if person1 not in IFAMILY["siblings"]:
+            IFAMILY["siblings"].append(person1)
+        if person2 not in IFAMILY["siblings"]:
+            IFAMILY["siblings"].append(person2)
+    else:
+        # Case with 3 arguments: Add first to siblings, second and third to parents
+        if person1 not in IFAMILY["siblings"]:
+            IFAMILY["siblings"].append(person1)
+        if person2 not in IFAMILY["parents"]:
+            IFAMILY["parents"].append(person2)
+        if person3 not in IFAMILY["parents"]:
+            IFAMILY["parents"].append(person3)
     
 def create_pedigree(person_id, num_siblings, parents, family_tree, generation=0):
     # Check if the person already exists in the tree
@@ -68,12 +89,13 @@ def create_pedigree(person_id, num_siblings, parents, family_tree, generation=0)
 # To create propositions, create classes for them first, annotated with "@proposition" and the Encoding
 #examplar:
 @proposition(E)
-class Char(person):
+class Char(object):
     def __init__(self, id, char):
         assert id in PEOPLE
         assert char in PEOPLE
         self.id=id
         self.char=char
+    def 
 
     def _prop_name(self):
         return f"Char.{self.id}+={self.char}"
@@ -90,13 +112,10 @@ class Rel(object):
         return f"fam({self.char}"
 
 
-
-
-
 #our project:
 #Characteristics of each family member
 @proposition(E)
-class Generation:
+class Generation(object):
     def _init_(self, person_id, generation):
         assert person_id in PEOPLE
         self.person_id = person_id
@@ -106,16 +125,16 @@ class Generation:
         return f"G({self.person_id}) = {self.generation}"
 
 @proposition(E)
-class Female:
+class Female(object):
     def _init_(self, person_id):
         assert person in PEOPLE
-        self.person_id + person_id
+        self.person_id =person_id
 
     def _prop_name(self):
         return f"F({self.person_id})=True"
 
 @proposition(E)
-class Affection:
+class Affection(object):
     def _init_(self, person_id):
         assert person_id in PEOPLE
         self.person_id = person_id
