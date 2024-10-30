@@ -47,7 +47,7 @@ def create_pedigree(person_id, num_siblings, parents, family_tree, generation=0)
 
     # Add parents if provided
     if parents:
-        parent1, parent2 = parents
+        parent1_id, parent2_id = parents
         if parent1 not in family_tree:
             # Recursively add each parent and establish spousal relationship
             create_family_tree(parent1, 0, [], family_tree, generation + 1)
@@ -55,8 +55,8 @@ def create_pedigree(person_id, num_siblings, parents, family_tree, generation=0)
             create_family_tree(parent2, 0, [], family_tree, generation + 1)
         
         # Link the parents as spouses and set them as the person's parents
-        family_tree[parent1]["spouse"] = parent2
-        family_tree[parent2]["spouse"] = parent1
+        family_tree[parent1_id]["spouse"] = parent2
+        family_tree[parent2_id]["spouse"] = parent1
         family_tree[person_id]["parents"] = [parent1, parent2]
         
         # Assign siblings' parents to the same parents
@@ -66,8 +66,9 @@ def create_pedigree(person_id, num_siblings, parents, family_tree, generation=0)
     return family_tree
 
 # To create propositions, create classes for them first, annotated with "@proposition" and the Encoding
+#examplar:
 @proposition(E)
-class Char(object):
+class Char(person):
     def __init__(self, id, char):
         assert id in PEOPLE
         assert char in PEOPLE
@@ -88,6 +89,114 @@ class Rel(object):
     def _prop_name(self):
         return f"fam({self.char}"
 
+
+
+
+
+#our project:
+#Characteristics of each family member
+@proposition(E)
+class Generation:
+    def _init_(self, person_id, generation):
+        assert person_id in PEOPLE
+        self.person_id = person_id
+        self.generation = generation
+
+    def _prop_name(self):
+        return f"G({self.person_id}) = {self.generation}"
+
+@proposition(E)
+class Female:
+    def _init_(self, person_id):
+        assert person in PEOPLE
+        self.person_id + person_id
+
+    def _prop_name(self):
+        return f"F({self.person_id})=True"
+
+@proposition(E)
+class Affection:
+    def _init_(self, person_id):
+        assert person_id in PEOPLE
+        self.person_id = person_id
+
+    def _prop_name(self):
+        return f"F({self.person_id})=True"
+
+@proposition(E)
+class BloodRelative:
+    def _init_(self, person_id):
+        assert person_id in PEOPLE
+        self.person_id = person_id
+
+    def _prop_name(self):
+        return f"F({self.person_id})=True"
+
+
+#Relationship between family members
+@proposition(E)
+class Child:
+    def _init_(self, child_id, parent1_id, parent2_id):
+        assert child_id, parent1_id, parent_id in PEOPLE
+        self.child_id = child_id
+        self.parent1_id = parent1_id
+        self.parent2_id = parent2_id
+
+    def _prop_name(self):
+        return f"C({self.child_id}, {self.parent1_id}, {self.parent2_id})=True"
+        
+
+
+@proposition(E)
+class Sibling:
+    def _init_(self, person1_id, person2_id):
+        assert person1_id, person2_id in PEOPLE
+        self.person1_id = person1_id
+        self.person2_id = person2_id
+
+    def _prop_name(self):
+        return f"C({self.perso1n_id}, {self.person2_id})=True"
+
+#Inheritance Pattern
+@proposition(E)
+class MoreMaleAffected:
+    def _init_(self, generation):
+        self.generation = generation
+
+    def _prop_name(self):
+        return f"M({genertion})=True"
+
+
+#Inheritance Mode
+@proposition(E)
+class RecessiveDisease:
+    def _prop_name(self):
+        return "R=True"
+
+@proposition(E)
+class XLinkedDisease:
+    def _prop_name(self):
+        return "X=True"
+
+# Initialize propositions
+@constraint.at_least_one(E)
+@proposition(E)
+class AtLeastOneAffected():
+    
+
+# Initialize propositions
+g = Generation(person_id, generation)
+f = Female(person_id)
+a = Affected(person_id)
+r = BloodRelative(person_id)
+c = Child(person_id, parent1_id, parent2_id)
+s = Sibling(person1_id, person2_id)
+m = MoreMalesAffected(generation)
+r_mode = RecessiveDisease()
+x_mode = XLinkedDisease()
+
+
+    
 # Different classes for propositions are useful because this allows for more dynamic constraint creation
 # for propositions within that class. For example, you can enforce that "at least one" of the propositions
 # that are instances of this class must be true by using a @constraint decorator.
