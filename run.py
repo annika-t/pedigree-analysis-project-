@@ -15,20 +15,6 @@ gen_last_count = input("number of people in generation 3: ")
 
 def create_family_tree(gen_count, gen_last_count):
     family_tree = []
-    current_id = 1
-    
-    # Calculate the number of people in each generation, starting from the last generation
-    gen_sizes = [gen_last_count]
-    for _ in range(gen_count - 1):
-        # Ensure each previous generation has enough people to be parents of the next generation
-        gen_sizes.insert(0, (gen_sizes[0] + 1) // 2)
-    
-    # Generate unique IDs for each generation
-    for size in gen_sizes:
-        generation = [current_id + i for i in range(size)]
-        family_tree.append(generation)
-        current_id += size
-    
     return family_tree
 
 # To create propositions, create classes for them first, annotated with "@proposition" and the Encoding
