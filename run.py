@@ -21,12 +21,6 @@ def create_people(FAMNUM):
     while i <=FAMNUM:
         id=i
         PEOPLE.update({id: None})
-    
-    
-def create_pedigree(IFAMILIES):
-
-
-
 
 
 @proposition(E)
@@ -41,7 +35,7 @@ class Char(object):
             char[2]=1
         PEOPLE[id]=characteristic
     def get_person:
-        if if in PEOPLE:
+        if id in PEOPLE:
             if id <=FAMNUM:
                 return PEOPLE[id]
     def _prop_name(self):
@@ -82,8 +76,14 @@ class Rel(object):
         IFAMILIES.append(ifamily)
         self.family1 = family1
         self.family2 = family2
-        
 
+
+
+def create_pedigree(IFAMILIES):
+
+
+
+#Propositions:
 #Inheritance Pattern
 @proposition(E)
 class MoreMaleAffected:
@@ -92,7 +92,6 @@ class MoreMaleAffected:
 
     def _prop_name(self):
         return f"M({genertion})=True"
-
 
 #Inheritance Mode
 @proposition(E)
@@ -104,11 +103,6 @@ class RecessiveDisease:
 class XLinkedDisease:
     def _prop_name(self):
         return "X=True"
-
-# Initialize propositions
-@constraint.at_least_one(E)
-@proposition(E)
-class AtLeastOneAffected():
     
 
 # Initialize propositions
