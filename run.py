@@ -14,30 +14,15 @@ PEDIGREE={}
 IFAMILIES=[]
 #dictionary to store individual family member (id, chars)
 PEOPLE={} 
+#amount of people in the family 
 FAMNUM=20
 
+#generate a dictionary represent each family member as an unique integer 
 def create_people(FAMNUM):
     while i <=FAMNUM:
         id=i
         PEOPLE.update({id: None})
-        
-def create_ifam(person1, person2, person3=None): #parameters are id of people 
-    # Helper function to add a person to a list without duplicates
-    def add_to_list(person, list_name):
-        if person not in IFAMILY[list_name]:
-            ifamily[list_name].append(person)
-
-    # Add people to appropriate lists based on the number of arguments
-    if person3 is None:
-        # Two arguments case: add both to siblings
-        add_to_list(person1, "siblings")
-        add_to_list(person2, "siblings")
-    else:
-        # Three arguments case: first goes to siblings, second and third go to parents
-        add_to_list(person1, "siblings")
-        add_to_list(person2, "parents")
-        add_to_list(person3, "parents")
-    IFAMILIES.append(ifamily)
+    
     
 def create_pedigree(IFAMILIES):
 
@@ -47,7 +32,7 @@ def create_pedigree(IFAMILIES):
 @proposition(E)
 class Char(object):
     def assign_person(id, char):
-        characteristic=[0,0,0]
+        characteristic=[0,0] #char[0]: bool for female, char[1]: bool for blood relative, char[2]: bool for affected 
         if char="Female":
             char[0]=1
         elif char="Blood Relative":
@@ -64,18 +49,26 @@ class Char(object):
 
 @proposition(E)
 class Rel(object):
-    def __init__(self,family1,family2=None):
-        if family2=None:
-            assert family1 in FAMILY
-            self.family1 = family1
+    def create_ifam(id1, id2, id3=None): 
+    # Helper function to add a person to a list without duplicates
+        def add_to_list(person, list_name):
+            if person not in IFAMILY[list_name]:
+                ifamily[list_name].append(person)
+    
+        # Add people to appropriate lists based on the number of arguments
+        if id3 is None:
+            # Two arguments case: add both to siblings
+            add_to_list(id1, "siblings")
+            add_to_list(id2, "siblings")
         else:
-        assert family1 in FAMILY
-        assert family2 in FAMILY
+            # Three arguments case: first goes to siblings, second and third go to parents
+            add_to_list(id1, "siblings")
+            add_to_list(id2, "parents")
+            add_to_list(id3, "parents")
+        IFAMILIES.append(ifamily)
         self.family1 = family1
         self.family2 = family2
-
-    def _prop_name(self):
-        return f"fam({self.char}"
+        
 
 #Inheritance Pattern
 @proposition(E)
@@ -105,9 +98,9 @@ class AtLeastOneAffected():
     
 
 # Initialize propositions
-f = Char("Female")   
-a = Char("Affected")
-r = Char("Blood Relative")
+f = Char(person_id,"Female")   
+a = Char(person_id,"Affected")
+r = Char(person_id,"Blood Relative")
 c = Rel(person_id, parent1_id, parent2_id)
 s = Rel(person1_id, person2_id)
 m = MoreMalesAffected(generation)
