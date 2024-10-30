@@ -63,9 +63,9 @@ class Rel(object):
             # Constraint: the siblings should have the same parents
             if (id1["parents"] != id2["parents]): # Constraints: person1 and person2 do not have the same parents
                 raise ValueError("The siblings should have the same parents.")
-            else if (id1["parents"] == True): # only person1 has parents
+            elif (id1["parents"] == True): # only person1 has parents
                 id2["parents"] = id1["parents"]
-            else if (id2["parents] == True): # only person2 has parents
+            elif (id2["parents] == True): # only person2 has parents
                 id1["parents"] = id2["parents"]
             else: #if both person have no parents
                 id1["parents"] = None
