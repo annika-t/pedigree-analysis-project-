@@ -1,4 +1,3 @@
-
 from bauhaus import Encoding, proposition, constraint
 from bauhaus.utils import count_solutions, likelihood
 
@@ -27,8 +26,9 @@ def create_people(FAMNUM):
 def create_pedigree(IFAMILIES):
 
 
-# To create propositions, create classes for them first, annotated with "@proposition" and the Encoding
-#examplar:
+
+
+
 @proposition(E)
 class Char(object):
     def assign_person(id, char):
