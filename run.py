@@ -27,17 +27,17 @@ def create_people(FAMNUM):
 class Char(object):
     def assign_person(id, char):
         characteristic=[0,0] #char[0]: bool for female, char[1]: bool for blood relative, char[2]: bool for affected 
-        if char="Female":
+        if char=="Female":
             char[0]=1
-        elif char="Blood Relative":
+        elif char=="Blood Relative":
             char[1]=1
-        elif char="Affected":
+        elif char=="Affected":
             char[2]=1
-        PEOPLE[id]=characteristic
+        PEOPLE["id"]=characteristic
     def get_person:
         if id in PEOPLE:
             if id <=FAMNUM:
-                return PEOPLE[id]
+                return PEOPLE["id"]
     def _prop_name(self):
         return f"Char.{self.id}={self.char}"
 
@@ -45,7 +45,8 @@ class Char(object):
 class Rel(object):
     def create_ifam(id1, id2, id3=None): 
     # Helper function to add a person to a list without duplicates
-        def add_to_list(person, list_name):
+        def add_to_list(id, list_name):
+            person = PEOPLE.get(id)
             if person not in IFAMILY[list_name]:
                 ifamily[list_name].append(person)
     
@@ -55,7 +56,7 @@ class Rel(object):
             add_to_list(id1, "siblings")
             add_to_list(id2, "siblings")
             # Constraint: the siblings should have the same parents
-            if (id1["parents"] != id2["parents]): # Constraints: person1 and person2 do not have the same parents
+            if (id1["parents"] != id2["parents"]): # Constraints: person1 and person2 do not have the same parents
                 raise ValueError("The siblings should have the same parents.")
             elif (id1["parents"] == True): # only person1 has parents
                 id2["parents"] = id1["parents"]
