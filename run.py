@@ -8,83 +8,37 @@ config.sat_backend = "kissat"
 
 # Encoding that will store all of your constraints
 E = Encoding()
+
 PEDIGREE={} 
-#immediate family (siblings+parents)
-IFAMILY={
-    "parents":[],
-    "siblings":[]
-}
-PERSON={
-    "id",
-    "char"=[]
-} #id, chars
-CHARACTERISTIC=[] #characteristics a person have (affected or not, geneder, blood relation,generation) 
-#
-def create_person(id, gen, gender, affected, br):
+#dictionary to store immediate family (siblings+parents)
+IFAMILIES=[]
+#dictionary to store individual family member (id, chars)
+PEOPLE={} 
+
+def create_person(id, gender, affected, br):
     char=[gender, affected, br]
-    PERSON={
-        "id":id,
-        "gen"=gen,
-        "gender"=char[0],
-        "affected"=char[1],
-        "br"=char[2]
-    }
-def create_ifam(person1, person2, person3=None):
+    PEOPLE.update({id: char})
+
+def create_ifam(person1, person2, person3=None): #parameters are id of people 
+    # Helper function to add a person to a list without duplicates
+    def add_to_list(person, list_name):
+        if person not in IFAMILY[list_name]:
+            ifamily[list_name].append(person)
+
+    # Add people to appropriate lists based on the number of arguments
     if person3 is None:
-        # Case with 2 arguments: Add both to siblings if not already in list
-        if person1 not in IFAMILY["siblings"]:
-            IFAMILY["siblings"].append(person1)
-        if person2 not in IFAMILY["siblings"]:
-            IFAMILY["siblings"].append(person2)
+        # Two arguments case: add both to siblings
+        add_to_list(person1, "siblings")
+        add_to_list(person2, "siblings")
     else:
-        # Case with 3 arguments: Add first to siblings, second and third to parents
-        if person1 not in IFAMILY["siblings"]:
-            IFAMILY["siblings"].append(person1)
-        if person2 not in IFAMILY["parents"]:
-            IFAMILY["parents"].append(person2)
-        if person3 not in IFAMILY["parents"]:
-            IFAMILY["parents"].append(person3)
+        # Three arguments case: first goes to siblings, second and third go to parents
+        add_to_list(person1, "siblings")
+        add_to_list(person2, "parents")
+        add_to_list(person3, "parents")
+    IFAMILIES.append(ifamily)
     
-def create_pedigree(person_id, num_siblings, parents, family_tree, generation=0):
-    # Check if the person already exists in the tree
-    if person_id not in family_tree:
-        # Initialize the person's data
-        family_tree[person_id] = {
-            "generation": generation,
-            "siblings": set(),
-            "parents": [],
-            "spouse": None
-        }
+def create_pedigree(IFAMILIES):
 
-    # Add siblings based on num_siblings count
-    siblings = []
-    for i in range(num_siblings):
-        sibling_id = person_id + i + 1
-        if sibling_id not in family_tree:
-            create_family_tree(sibling_id, 0, [], family_tree, generation)
-        siblings.append(sibling_id)
-        family_tree[person_id]["siblings"].add(sibling_id)
-        family_tree[sibling_id]["siblings"].add(person_id)
-
-    # Add parents if provided
-    if parents:
-        parent1_id, parent2_id = parents
-        if parent1 not in family_tree:
-            # Recursively add each parent and establish spousal relationship
-            create_family_tree(parent1, 0, [], family_tree, generation + 1)
-        if parent2 not in family_tree:
-            create_family_tree(parent2, 0, [], family_tree, generation + 1)
-        
-        # Link the parents as spouses and set them as the person's parents
-        family_tree[parent1_id]["spouse"] = parent2
-        family_tree[parent2_id]["spouse"] = parent1
-        family_tree[person_id]["parents"] = [parent1, parent2]
-        
-        # Assign siblings' parents to the same parents
-        for sibling_id in siblings:
-            family_tree[sibling_id]["parents"] = [parent1, parent2]
-    
-    return family_tree
 
 # To create propositions, create classes for them first, annotated with "@proposition" and the Encoding
 #examplar:
@@ -95,8 +49,6 @@ class Char(object):
         assert char in PEOPLE
         self.id=id
         self.char=char
-    def 
-
     def _prop_name(self):
         return f"Char.{self.id}+={self.char}"
 
@@ -114,16 +66,6 @@ class Rel(object):
 
 #our project:
 #Characteristics of each family member
-@proposition(E)
-class Generation(object):
-    def _init_(self, person_id, generation):
-        assert person_id in PEOPLE
-        self.person_id = person_id
-        self.generation = generation
-
-    def _prop_name(self):
-        return f"G({self.person_id}) = {self.generation}"
-
 @proposition(E)
 class Female(object):
     def _init_(self, person_id):
@@ -204,7 +146,6 @@ class AtLeastOneAffected():
     
 
 # Initialize propositions
-g = Generation(person_id, generation)
 f = Female(person_id)
 a = Affected(person_id)
 r = BloodRelative(person_id)
@@ -232,7 +173,6 @@ class FancyPropositions:
         return f"A.{self.data}"
 
 # Call your variables whatever you want
-g = Char("Generation")
 f = Char("Female")   
 a = Char("Affected")
 r = Char("Blood Relative")
