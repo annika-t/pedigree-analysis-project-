@@ -72,8 +72,9 @@ class Rel(object):
                 id2["parents"] = None         
         else: 
         # Three arguments case: first goes to siblings, second and third go to parents
+        # Check Constraint: the parents should not be blood relatives
             if id2["parents"] == id2["parents"]:
-                raise ValueError("Parents should not be blood related (i.e. siblings)")
+                raise ValueError("Parents should not be blood relatives (i.e. siblings)")
             else:
                 add_to_list(id1, "siblings")
                 add_to_list(id2, "parents")
