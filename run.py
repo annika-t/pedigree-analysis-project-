@@ -20,7 +20,7 @@ def create_family_tree(person_id, num_siblings, parents, family_tree, generation
             "parents": [],
             "spouse": None
         }
-    
+
     # Add siblings based on num_siblings count
     siblings = []
     for i in range(num_siblings):
@@ -54,12 +54,20 @@ def create_family_tree(person_id, num_siblings, parents, family_tree, generation
 # To create propositions, create classes for them first, annotated with "@proposition" and the Encoding
 @proposition(E)
 class Char:
-    def __init__(self, char,):
+    def __init__(self, char):
         self.char = char
 
     def _prop_name(self):
         return f"A.{self.char}"
 
+@proposition(E)
+class Rel:
+    def __init__(self,family1,family2):
+        
+        self.char = char
+
+    def _prop_name(self):
+        return f"A.{self.char}"
 
 # Different classes for propositions are useful because this allows for more dynamic constraint creation
 # for propositions within that class. For example, you can enforce that "at least one" of the propositions
