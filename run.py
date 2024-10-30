@@ -17,7 +17,7 @@ PEOPLE={}
 FAMNUM=20
 
 def create_people(FAMNUM):
-    while i <=20:
+    while i <=FAMNUM:
         id=i
         PEOPLE.update({id: None})
         
@@ -55,6 +55,10 @@ class Char(object):
         elif char="Affected":
             char[2]=1
         PEOPLE[id]=characteristic
+    def get_person:
+        if if in PEOPLE:
+            if id <=FAMNUM:
+                return PEOPLE[id]
     def _prop_name(self):
         return f"Char.{self.id}={self.char}"
 
