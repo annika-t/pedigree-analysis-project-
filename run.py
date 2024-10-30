@@ -14,11 +14,13 @@ PEDIGREE={}
 IFAMILIES=[]
 #dictionary to store individual family member (id, chars)
 PEOPLE={} 
+FAMNUM=20
 
-def create_person(id, gender, affected, br):
-    char=[gender, affected, br]
-    PEOPLE.update({id: char})
-
+def create_people(FAMNUM):
+    while i <=20:
+        id=i
+        PEOPLE.update({id: None})
+        
 def create_ifam(person1, person2, person3=None): #parameters are id of people 
     # Helper function to add a person to a list without duplicates
     def add_to_list(person, list_name):
@@ -44,17 +46,25 @@ def create_pedigree(IFAMILIES):
 #examplar:
 @proposition(E)
 class Char(object):
-    def __init__(self, id, char):
-        assert id in PEOPLE
-        assert char in PEOPLE
-        self.id=id
-        self.char=char
+    def assign_person(id, char):
+        characteristic=[0,0,0]
+        if char="Female":
+            char[0]=1
+        elif char="Blood Relative":
+            char[1]=1
+        elif char="Affected":
+            char[2]=1
+        PEOPLE[id]=characteristic
     def _prop_name(self):
-        return f"Char.{self.id}+={self.char}"
+        return f"Char.{self.id}={self.char}"
 
 @proposition(E)
 class Rel(object):
-    def __init__(self,family1,family2):
+    def __init__(self,family1,family2=None):
+        if family2=None:
+            assert family1 in FAMILY
+            self.family1 = family1
+        else:
         assert family1 in FAMILY
         assert family2 in FAMILY
         self.family1 = family1
@@ -62,61 +72,6 @@ class Rel(object):
 
     def _prop_name(self):
         return f"fam({self.char}"
-
-
-#our project:
-#Characteristics of each family member
-@proposition(E)
-class Female(object):
-    def _init_(self, person_id):
-        assert person in PEOPLE
-        self.person_id =person_id
-
-    def _prop_name(self):
-        return f"F({self.person_id})=True"
-
-@proposition(E)
-class Affection(object):
-    def _init_(self, person_id):
-        assert person_id in PEOPLE
-        self.person_id = person_id
-
-    def _prop_name(self):
-        return f"F({self.person_id})=True"
-
-@proposition(E)
-class BloodRelative:
-    def _init_(self, person_id):
-        assert person_id in PEOPLE
-        self.person_id = person_id
-
-    def _prop_name(self):
-        return f"F({self.person_id})=True"
-
-
-#Relationship between family members
-@proposition(E)
-class Child:
-    def _init_(self, child_id, parent1_id, parent2_id):
-        assert child_id, parent1_id, parent_id in PEOPLE
-        self.child_id = child_id
-        self.parent1_id = parent1_id
-        self.parent2_id = parent2_id
-
-    def _prop_name(self):
-        return f"C({self.child_id}, {self.parent1_id}, {self.parent2_id})=True"
-        
-
-
-@proposition(E)
-class Sibling:
-    def _init_(self, person1_id, person2_id):
-        assert person1_id, person2_id in PEOPLE
-        self.person1_id = person1_id
-        self.person2_id = person2_id
-
-    def _prop_name(self):
-        return f"C({self.perso1n_id}, {self.person2_id})=True"
 
 #Inheritance Pattern
 @proposition(E)
@@ -146,11 +101,11 @@ class AtLeastOneAffected():
     
 
 # Initialize propositions
-f = Female(person_id)
-a = Affected(person_id)
-r = BloodRelative(person_id)
-c = Child(person_id, parent1_id, parent2_id)
-s = Sibling(person1_id, person2_id)
+f = Char("Female")   
+a = Char("Affected")
+r = Char("Blood Relative")
+c = Rel(person_id, parent1_id, parent2_id)
+s = Rel(person1_id, person2_id)
 m = MoreMalesAffected(generation)
 r_mode = RecessiveDisease()
 x_mode = XLinkedDisease()
