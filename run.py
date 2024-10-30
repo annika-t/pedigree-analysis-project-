@@ -8,9 +8,23 @@ config.sat_backend = "kissat"
 
 # Encoding that will store all of your constraints
 E = Encoding()
-
+PEDIGREE={} 
+IFAMILY={} #immediate family (siblings+parents)
+PERSON={} #id, chars
+CHARACTERISTIC=[] #characteristics a person have (affected or not, geneder, blood relation,generation) 
 #
-def create_family_tree(person_id, num_siblings, parents, family_tree, generation=0):
+def create_person(id, gen, gender, affected, br):
+    char=[gender, affected, br]
+    person={
+        "id":id,
+        "gen"=gen,
+        "gender"=char[0],
+        "affected"=char[1],
+        "br"=char[2]
+    }
+def create_ifam():
+    
+def create_pedigree(person_id, num_siblings, parents, family_tree, generation=0):
     # Check if the person already exists in the tree
     if person_id not in family_tree:
         # Initialize the person's data
@@ -53,21 +67,26 @@ def create_family_tree(person_id, num_siblings, parents, family_tree, generation
 
 # To create propositions, create classes for them first, annotated with "@proposition" and the Encoding
 @proposition(E)
-class Char:
-    def __init__(self, char):
-        self.char = char
+class Char(object):
+    def __init__(self, id, char):
+        assert id in PEOPLE
+        assert char in PEOPLE
+        self.id=id
+        self.char=char
 
     def _prop_name(self):
-        return f"A.{self.char}"
+        return f"Char.{self.id}+={self.char}"
 
 @proposition(E)
-class Rel:
+class Rel(object):
     def __init__(self,family1,family2):
-        
-        self.char = char
+        assert family1 in FAMILY
+        assert family2 in FAMILY
+        self.family1 = family1
+        self.family2 = family2
 
     def _prop_name(self):
-        return f"A.{self.char}"
+        return f"fam({self.char}"
 
 # Different classes for propositions are useful because this allows for more dynamic constraint creation
 # for propositions within that class. For example, you can enforce that "at least one" of the propositions
