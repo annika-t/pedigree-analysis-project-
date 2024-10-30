@@ -70,11 +70,14 @@ class Rel(object):
             else: #if both person have no parents
                 id1["parents"] = None
                 id2["parents"] = None         
-        else:
-            # Three arguments case: first goes to siblings, second and third go to parents
-            add_to_list(id1, "siblings")
-            add_to_list(id2, "parents")
-            add_to_list(id3, "parents")
+        else: 
+        # Three arguments case: first goes to siblings, second and third go to parents
+            if id2["parents"] == id2["parents"]:
+                raise ValueError("Parents should not be blood related (i.e. siblings)")
+            else:
+                add_to_list(id1, "siblings")
+                add_to_list(id2, "parents")
+                add_to_list(id3, "parents")
         IFAMILIES.append(ifamily)
         self.family1 = family1
         self.family2 = family2
