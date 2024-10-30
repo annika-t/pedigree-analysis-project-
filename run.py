@@ -10,11 +10,45 @@ config.sat_backend = "kissat"
 E = Encoding()
 
 #
-gen_count = input("number of generations: ")
-gen_last_count = input("number of people in generation 3: ")
+def create_family_tree(person_id, num_siblings, parents, family_tree, generation=0):
+    # Check if the person already exists in the tree
+    if person_id not in family_tree:
+        # Initialize the person's data
+        family_tree[person_id] = {
+            "generation": generation,
+            "siblings": set(),
+            "parents": [],
+            "spouse": None
+        }
+    
+    # Add siblings based on num_siblings count
+    siblings = []
+    for i in range(num_siblings):
+        sibling_id = person_id + i + 1
+        if sibling_id not in family_tree:
+            create_family_tree(sibling_id, 0, [], family_tree, generation)
+        siblings.append(sibling_id)
+        family_tree[person_id]["siblings"].add(sibling_id)
+        family_tree[sibling_id]["siblings"].add(person_id)
 
-def create_family_tree(gen_count, gen_last_count):
-    family_tree = []
+    # Add parents if provided
+    if parents:
+        parent1, parent2 = parents
+        if parent1 not in family_tree:
+            # Recursively add each parent and establish spousal relationship
+            create_family_tree(parent1, 0, [], family_tree, generation + 1)
+        if parent2 not in family_tree:
+            create_family_tree(parent2, 0, [], family_tree, generation + 1)
+        
+        # Link the parents as spouses and set them as the person's parents
+        family_tree[parent1]["spouse"] = parent2
+        family_tree[parent2]["spouse"] = parent1
+        family_tree[person_id]["parents"] = [parent1, parent2]
+        
+        # Assign siblings' parents to the same parents
+        for sibling_id in siblings:
+            family_tree[sibling_id]["parents"] = [parent1, parent2]
+    
     return family_tree
 
 # To create propositions, create classes for them first, annotated with "@proposition" and the Encoding
