@@ -158,11 +158,18 @@ class RecessiveDisease:
 class XLinkedDisease:
     def _prop_name(self):
         return "X=True"
-    
+
+@proposition(E)
+class Affected(Char):
+    def _prop_name(self):
+        return f"A({self.id})=True"
+        
 
 # Initialize propositions
 f = Char(person_id,"Female")   
-a = Char(person_id,"Affected")
+a1 = Char(person_id,"Affected")
+a2 = Char(parent1_id,"Affected")
+a3 = Char(parent2_id,"Affected")
 r = Char(person_id,"Blood Relative")
 c = Rel(person_id, parent1_id, parent2_id)
 s = Rel(person1_id, person2_id)
@@ -170,26 +177,11 @@ m = MoreMalesAffected(generation)
 r_mode = RecessiveDisease()
 x_mode = XLinkedDisease()
 
-
-
-# Build an example full theory for your setting and return it.
-#
-#  There should be at least 10 variables, and a sufficiently large formula to describe it (>50 operators).
-#  This restriction is fairly minimal, and if there is any concern, reach out to the teaching staff to clarify
-#  what the expectations are.
-def example_theory():
-    # Add custom constraints by creating formulas with the variables you created. 
-    E.add_constraint((a | b) & ~x)
-    # Implication
-    E.add_constraint(y >> z)
-    # Negate a formula
-    E.add_constraint(~(x & y))
-    # You can also add more customized "fancy" constraints. Use case: you don't want to enforce "exactly one"
-    # for every instance of BasicPropositions, but you want to enforce it for a, b, and c.:
-    constraint.add_exactly_one(E, a, b, c)
-
+# Theory for Constraints
+def theory():
+    E.add_constraint((a & c & ~a2 & ~a3) >> ReccessiveDisease())
+    
     return E
-
 
 if __name__ == "__main__":
 
