@@ -43,40 +43,28 @@ class Char(object):
 
 @proposition(E)
 class Rel(object):
-    def create_ifam(id1, id2, id3=None): 
-    # Helper function to add a person to a list without duplicates
-        def add_to_list(id, list_name):
-            person = PEOPLE.get(id)
-            if person not in IFAMILY[list_name]:
+    def create_ifam(id1, id2, id3=None):
+        # Initialize a family structure
+        ifamily = {"parents": [], "siblings": []}
+
+        # Helper function to add a person to a list without duplicates
+        def add_to_list(person_id, list_name):
+            person = PEOPLE[person_id]
+            if person not in ifamily[list_name]:
                 ifamily[list_name].append(person)
-    
-        # Add people to appropriate lists based on the number of arguments
+
+        # Two arguments case: add both to siblings
         if id3 is None:
-            # Two arguments case: add both to siblings
             add_to_list(id1, "siblings")
             add_to_list(id2, "siblings")
-            # Constraint: the siblings should have the same parents
-            if (id1["parents"] != id2["parents"]): # Constraints: person1 and person2 do not have the same parents
-                raise ValueError("The siblings should have the same parents.")
-            elif (id1["parents"] == True): # only person1 has parents
-                id2["parents"] = id1["parents"]
-            elif (id2["parents] == True): # only person2 has parents
-                id1["parents"] = id2["parents"]
-            else: #if both person have no parents
-                id1["parents"] = None
-                id2["parents"] = None         
-        else: 
-        # Three arguments case: first goes to siblings, second and third go to parents
-        # Check Constraint: the parents should not be blood relatives
-            if id2["parents"] == id2["parents"]:
-                raise ValueError("Parents should not be blood relatives (i.e. siblings)")
-            else:
-                add_to_list(id1, "siblings")
-                add_to_list(id2, "parents")
-                add_to_list(id3, "parents")
+        else:
+            # Three arguments case: first goes to siblings, second and third go to parents
+            add_to_list(id1, "siblings")
+            add_to_list(id2, "parents")
+            add_to_list(id3, "parents")
+
+        # Add the completed family dictionary to IFAMILIES
         IFAMILIES.append(ifamily)
-        self.family1 = family1
-        self.family2 = family2
 
 
 
