@@ -185,6 +185,7 @@ def theory():
     
     return E
 
+#Template
 if __name__ == "__main__":
 
     T = example_theory()
@@ -202,3 +203,69 @@ if __name__ == "__main__":
         # Literals are compiled to NNF here
         print(" %s: %.2f" % (vn, likelihood(T, v)))
     print()
+
+# Our code:
+if __name__ == "__main__":
+    T = theory()
+    # Compile the Constraints to the main
+    T = T.compile()
+
+    # Sample IDs for family members
+    person1_id, person2_id, person3_id, person4_id, parent1_id, parent2_id = range(1, 7)
+    
+    # Set up the size of the family
+    FAMNUM = 6
+    
+    """
+    examplar tree:
+    person1-----person2                   gen 0
+             | 
+     person3   person4-----person5        gen 1
+                        |
+                     person6              gen 2 
+    """
+
+    # Generate people and define their characteristics and relationships
+    create_people(FAMNUM)  # Initialize PEOPLE dictionary
+
+    # Assign characteristics to individuals
+    Char.assign_person(person1_id, "Female")
+    Char.assign_person(person2_id, "Blood Relative")
+    Char.assign_person(person3_id, "Affected")
+    Char.assign_person(person4_id, "Female")
+    Char.assign_person(parent1_id, "Blood Relative")
+    Char.assign_person(parent2_id, "Blood Relative")
+    and more
+    
+    # Create relationships between individuals
+    Rel.create_ifam(person3_id, person4_id) # Siblings
+    Rel.create_ifam(person3_id, parent_id, parent2_id) # Gen 0 and gen 1
+    Rel.create_ifam(person4_id, parent_id, parent2_id) # Gen 0 and gen 1
+    Rel.create_ifam(person6_id, person4_id, parent5_id) # Gen 1 and gen 2
+    
+    # Build the pedigree from the relationships
+    PEDIGREE = Rel.create_pedigree()
+    
+    # Print generated pedigree for verification
+    print("Pedigree:", PEDIGREE)
+    
+    # Initialize propositions for family members
+    f = Char.assign_person(person_id, "Female")   
+    a1 = Char.assign_person(person_id, "Affected")
+    a2 = Char.assign_person(parent1_id, "Affected")
+    a3 = Char.assign_person(parent2_id, "Affected")
+    r = Char.assign_person(person_id, "Blood Relative")
+    c = Rel.create_ifam(person_id, parent1_id, parent2_id)
+    s = Rel.create_ifam(person1_id, person2_id)
+    m = MoreMaleAffected(1)
+    r_mode = RecessiveDisease()
+    x_mode = XLinkedDisease()
+
+    # Compile and analyze the theory
+    T = theory()  # Define the theory with constraints
+    T = T.compile()
+
+    # Run the likelihood function as a test
+    likelihood_value = likelihood(E, recessive_disease_prop)
+    print("Likelihood of recessive disease:", likelihood_value)
+
