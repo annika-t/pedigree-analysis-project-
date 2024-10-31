@@ -159,6 +159,7 @@ class XLinkedDisease:
     def _prop_name(self):
         return "X=True"
 
+# Family Member that is affected
 @proposition(E)
 class Affected(Char):
     def _prop_name(self):
@@ -179,6 +180,7 @@ x_mode = XLinkedDisease()
 
 # Theory for Constraints
 def theory():
+    # If both parents of an affected family member are unaffected, then the disease is recessive
     E.add_constraint((a & c & ~a2 & ~a3) >> r_mode)
     
     return E
