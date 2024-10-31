@@ -181,7 +181,7 @@ x_mode = XLinkedDisease()
 # Theory for Constraints
 def theory():
     # If both parents of an affected family member are unaffected, then the disease is recessive
-    E.add_constraint((a & c & ~a2 & ~a3) >> r_mode)
+    E.add_constraint((a & c & (~a2 & ~a3)) >> r_mode)
     
     return E
 
