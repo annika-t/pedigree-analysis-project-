@@ -179,7 +179,7 @@ x_mode = XLinkedDisease()
 
 # Theory for Constraints
 def theory():
-    E.add_constraint((a & c & ~a2 & ~a3) >> ReccessiveDisease())
+    E.add_constraint((a & c & ~a2 & ~a3) >> r_mode)
     
     return E
 
