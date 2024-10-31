@@ -68,74 +68,74 @@ class Rel(object):
 
 
 
-@staticmethod
-def create_pedigree():
-    PEDIGREE = {}  # Dictionary to store generational information
-
-    # Divide PEOPLE into blood relatives and non-blood relatives
-    list_BR = [id for id, details in PEOPLE.items() if details[1] == 1]  # Blood relatives
-    list_S = [id for id in PEOPLE if id not in list_BR]  # Non-blood relatives
-
-    # Recursive function to process blood relatives in generations
-    def process_generation(current_gen, previous_gen=None):
-        next_gen_ids = []
-
-        for person_id in list_BR[:]:  # Iterate over a copy of list_BR
-            person = PEOPLE[person_id]
-            parents = IFAMILIES[person_id].get("parents", [])
-
-            # Check for first generation (no parents)
-            if not parents and current_gen == 1:
-                if "gen 1" not in PEDIGREE:
-                    PEDIGREE["gen 1"] = {}
-                PEDIGREE["gen 1"][person_id] = person
-                list_BR.remove(person_id)
-
-            # Process subsequent generations based on parents in the previous generation
-            elif current_gen > 1 and any(parent in PEDIGREE.get(f"gen {current_gen - 1}", {}) for parent in parents):
-                gen_key = f"gen {current_gen}"
-                if gen_key not in PEDIGREE:
-                    PEDIGREE[gen_key] = {}
-                
-                # Add person and their siblings
-                PEDIGREE[gen_key][person_id] = person
-                siblings = IFAMILIES[person_id].get("siblings", [])
-                for sibling in siblings:
-                    if sibling in list_BR:
-                        PEDIGREE[gen_key][sibling] = PEOPLE[sibling]
-                        list_BR.remove(sibling)
-                
-                list_BR.remove(person_id)  # Remove person from list_BR
-                next_gen_ids.extend(parents)  # Collect for the next generation
-
-        # Recurse if there are more people to process in list_BR
-        if list_BR:
-            process_generation(current_gen + 1, next_gen_ids)
-
-    # Start processing from generation 1
-    process_generation(1)
-
-    # Process non-blood relatives in list_S once all blood relatives are processed
-    def process_siblings(last_gen):
-        while list_S:
-            for person_id in list_S[:]:
+    @staticmethod
+    def create_pedigree():
+        PEDIGREE = {}  # Dictionary to store generational information
+    
+        # Divide PEOPLE into blood relatives and non-blood relatives
+        list_BR = [id for id, details in PEOPLE.items() if details[1] == 1]  # Blood relatives
+        list_S = [id for id in PEOPLE if id not in list_BR]  # Non-blood relatives
+    
+        # Recursive function to process blood relatives in generations
+        def process_generation(current_gen, previous_gen=None):
+            next_gen_ids = []
+    
+            for person_id in list_BR[:]:  # Iterate over a copy of list_BR
                 person = PEOPLE[person_id]
                 parents = IFAMILIES[person_id].get("parents", [])
-
-                # Find a suitable generation based on parents' generation
-                for gen in range(last_gen, 0, -1):
-                    if any(parent not in PEDIGREE.get(f"gen {gen - 1}", {}) for parent in parents):
-                        gen_key = f"gen {gen - 1}"
-                        if gen_key not in PEDIGREE:
-                            PEDIGREE[gen_key] = {}
-                        PEDIGREE[gen_key][person_id] = person
-                        list_S.remove(person_id)
-                        break
-
-    # Process remaining siblings after blood relatives
-    process_siblings(len(PEDIGREE))
-
-    return PEDIGREE
+    
+                # Check for first generation (no parents)
+                if not parents and current_gen == 1:
+                    if "gen 1" not in PEDIGREE:
+                        PEDIGREE["gen 1"] = {}
+                    PEDIGREE["gen 1"][person_id] = person
+                    list_BR.remove(person_id)
+    
+                # Process subsequent generations based on parents in the previous generation
+                elif current_gen > 1 and any(parent in PEDIGREE.get(f"gen {current_gen - 1}", {}) for parent in parents):
+                    gen_key = f"gen {current_gen}"
+                    if gen_key not in PEDIGREE:
+                        PEDIGREE[gen_key] = {}
+                    
+                    # Add person and their siblings
+                    PEDIGREE[gen_key][person_id] = person
+                    siblings = IFAMILIES[person_id].get("siblings", [])
+                    for sibling in siblings:
+                        if sibling in list_BR:
+                            PEDIGREE[gen_key][sibling] = PEOPLE[sibling]
+                            list_BR.remove(sibling)
+                    
+                    list_BR.remove(person_id)  # Remove person from list_BR
+                    next_gen_ids.extend(parents)  # Collect for the next generation
+    
+            # Recurse if there are more people to process in list_BR
+            if list_BR:
+                process_generation(current_gen + 1, next_gen_ids)
+    
+        # Start processing from generation 1
+        process_generation(1)
+    
+        # Process non-blood relatives in list_S once all blood relatives are processed
+        def process_siblings(last_gen):
+            while list_S:
+                for person_id in list_S[:]:
+                    person = PEOPLE[person_id]
+                    parents = IFAMILIES[person_id].get("parents", [])
+    
+                    # Find a suitable generation based on parents' generation
+                    for gen in range(last_gen, 0, -1):
+                        if any(parent not in PEDIGREE.get(f"gen {gen - 1}", {}) for parent in parents):
+                            gen_key = f"gen {gen - 1}"
+                            if gen_key not in PEDIGREE:
+                                PEDIGREE[gen_key] = {}
+                            PEDIGREE[gen_key][person_id] = person
+                            list_S.remove(person_id)
+                            break
+    
+        # Process remaining siblings after blood relatives
+        process_siblings(len(PEDIGREE))
+    
+        return PEDIGREE
 
 
 #Propositions:
