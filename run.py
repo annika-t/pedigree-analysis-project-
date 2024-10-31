@@ -105,31 +105,6 @@ r_mode = RecessiveDisease()
 x_mode = XLinkedDisease()
 
 
-    
-# Different classes for propositions are useful because this allows for more dynamic constraint creation
-# for propositions within that class. For example, you can enforce that "at least one" of the propositions
-# that are instances of this class must be true by using a @constraint decorator.
-# other options include: at most one, exactly one, at most k, and implies all.
-# For a complete module reference, see https://bauhaus.readthedocs.io/en/latest/bauhaus.html
-@constraint.at_least_one(E)
-@proposition(E)
-class FancyPropositions:
-
-    def __init__(self, data):
-        self.data = data
-
-    def _prop_name(self):
-        return f"A.{self.data}"
-
-# Call your variables whatever you want
-f = Char("Female")   
-a = Char("Affected")
-r = Char("Blood Relative")
-# At least one of these will be true
-x = FancyPropositions("x")
-y = FancyPropositions("y")
-z = FancyPropositions("z")
-
 
 # Build an example full theory for your setting and return it.
 #
