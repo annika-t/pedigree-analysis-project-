@@ -1,5 +1,7 @@
 from bauhaus import Encoding, proposition, constraint
 from bauhaus.utils import count_solutions, likelihood
+from config import *
+from lib204 import semantic_interface
 
 # These two lines make sure a faster SAT solver is used.
 from nnf import config
@@ -18,23 +20,26 @@ FAMNUM=20
 
 #generate a dictionary represent each family member as an unique integer 
 def create_people(FAMNUM):
+    i=1
     while i <=FAMNUM:
         id=i
-        PEOPLE.update({id: None})
+        PEOPLE.update({id: [0,0,0]})
+        i+=1
 
 
 @proposition(E)
 class Char(object):
     def assign_person(id, char):
-        characteristic=[0,0] #char[0]: bool for female, char[1]: bool for blood relative, char[2]: bool for affected 
+        
+        characteristic=[0,0,0] #char[0]: bool for female, char[1]: bool for blood relative, char[2]: bool for affected 
         if char=="Female":
-            char[0]=1
+            characteristic[0]=1
         elif char=="Blood Relative":
-            char[1]=1
+            characteristic[1]=1
         elif char=="Affected":
-            char[2]=1
+            characteristic[2]=1
         PEOPLE["id"]=characteristic
-    def get_person:
+    def get_person():
         if id in PEOPLE:
             if id <=FAMNUM:
                 return PEOPLE["id"]
@@ -146,7 +151,7 @@ class MoreMaleAffected:
         self.generation = generation
 
     def _prop_name(self):
-        return f"M({genertion})=True"
+        return f"M({self.genertion})=True"
 
 #Inheritance Mode
 @proposition(E)
@@ -159,59 +164,75 @@ class XLinkedDisease:
     def _prop_name(self):
         return "X=True"
 
-# Family Member that is affected
-@proposition(E)
-class Affected(Char):
-    def _prop_name(self):
-        return f"A({self.id})=True"
-        
-
 # Initialize propositions
-f = Char(person_id,"Female")   
-a1 = Char(person_id,"Affected")
-a2 = Char(parent1_id,"Affected")
-a3 = Char(parent2_id,"Affected")
-r = Char(person_id,"Blood Relative")
-c = Rel(person_id, parent1_id, parent2_id)
-s = Rel(person1_id, person2_id)
-m = MoreMalesAffected(generation)
-r_mode = RecessiveDisease()
-x_mode = XLinkedDisease()
+#create something to assign the ids
+
+child1_id = create_people()  # Assuming this is the id of the affected family member
+parent1_id = 2   # Assuming this is the id of one of the parents
+parent2_id = 3  
+child2_id = 4 #sibling 
+generation = 3
+
+a1 = Char(child1_id, "Affected")
+a2 = Char(parent1_id, "Affected")  # Affected family member 2 (parent)
+a3 = Char(parent2_id, "Affected")  # Affected family member 3 (another parent)
+c1 = Rel(child1_id, parent1_id, parent2_id)
+c2 = Rel(child2_id, parent1_id, parent2_id)# Parent-child relationship
+s = Rel(child1_id, child2_id)              # Sibling relationship
+m = MoreMaleAffected(generation)             # More males affected in generation
+r_mode = RecessiveDisease()                    # Recessive disease mode
+x_mode = XLinkedDisease()  # X-linked disease mode
+
 
 # Theory for Constraints
 def theory():
     # If both parents of an affected family member are unaffected, then the disease is recessive
-    E.add_constraint((a & c & (~a2 & ~a3)) >> r_mode)
+    recessive_tseitin = semantic_interface.Encoding()
+    x1 = recessive_tseitin.tseitin(a1 & c1, 'x1')  
+    x2 = recessive_tseitin.tseitin(~a2, 'x2')  
+    x3 = recessive_tseitin.tseitin(~a3,  'x3') 
+    x4 = recessive_tseitin.tseitin(x2 & x3, 'x4') 
+    x5 = recessive_tseitin.tseitin(x1 & x4, 'x5')  
+    x6 = recessive_tseitin.tseitin((x5 >> r_mode), 'x6')
+    recessive_tseitin.finalize(x6)  
+    E.add_constraint(x6)
+    
+    #if two children have the same parents, they are siblings
+    sibling_tseitin = semantic_interface.Encoding()
+    x1 = sibling_tseitin.tseitin(c1 & c2, 'x1')
+    x2 = sibling_tseitin.tseitin(x1>>s, 'x2')
+    x3 = sibling_tseitin.tseitin(s>>x1, 'x3')
+    x4 = sibling_tseitin.tseitin(x3 & x2, 'x4')
+    sibling_tseitin.finalize(x4)  
+    E.add_constraint(x4)
+    
+    #for there to be a child, there must be one male and one female parent
+    parentchild_tseitin = semantic_interface.Encoding()
+    x1 = parentchild_tseitin.tseitin(Char(parent1_id, "Female")  & ~Char(parent2_id, "Female") , 'x1')
+    x2 = parentchild_tseitin.tseitin(~Char(parent1_id, "Female")  & Char(parent2_id, "Female"), 'x2')
+    x3 = parentchild_tseitin.tseitin(x1|x2, 'x3')
+    x4 = parentchild_tseitin.tseitin(c1>>x3, 'x4')
+    parentchild_tseitin.finalize(x4)  
+    E.add_constraint(x4)
+    
+    #Parents cannot be blood relatives
+    pr_tseitin = semantic_interface.Encoding()
+    x1 = pr_tseitin.tseitin(Char(parent1_id, "Blood Relative")  & ~Char(parent2_id, "Blood Relative") , 'x1')
+    x2 = pr_tseitin.tseitin(~Char(parent1_id, "Blood Relative")  & Char(parent2_id, "Blood Relative"), 'x2')
+    x3 = pr_tseitin.tseitin(x1|x2, 'x3')
+    x4 = pr_tseitin.tseitin(c1>>x3, 'x4')
+    pr_tseitin.finalize(x4)  
+    E.add_constraint(x4)
     
     return E
 
-#Template
-if __name__ == "__main__":
-
-    T = example_theory()
-    # Don't compile until you're finished adding all your constraints!
-    T = T.compile()
-    # After compilation (and only after), you can check some of the properties
-    # of your model:
-    print("\nSatisfiable: %s" % T.satisfiable())
-    print("# Solutions: %d" % count_solutions(T))
-    print("   Solution: %s" % T.solve())
-
-    print("\nVariable likelihoods:")
-    for v,vn in zip([a,b,c,x,y,z], 'abcxyz'):
-        # Ensure that you only send these functions NNF formulas
-        # Literals are compiled to NNF here
-        print(" %s: %.2f" % (vn, likelihood(T, v)))
-    print()
-
-# Our code:
 if __name__ == "__main__":
     T = theory()
     # Compile the Constraints to the main
     T = T.compile()
 
     # Sample IDs for family members
-    person1_id, person2_id, person3_id, person4_id, parent1_id, parent2_id = range(1, 7)
+    person1_id, person2_id, person3_id, person4_id, person5_id, person6_id = range(1, 7)
     
     # Set up the size of the family
     FAMNUM = 6
@@ -230,18 +251,18 @@ if __name__ == "__main__":
 
     # Assign characteristics to individuals
     Char.assign_person(person1_id, "Female")
-    Char.assign_person(person2_id, "Blood Relative")
-    Char.assign_person(person3_id, "Affected")
+    Char.assign_person(person2_id, "Affected")
+    Char.assign_person(person3_id, "Blood Relative")
     Char.assign_person(person4_id, "Female")
-    Char.assign_person(parent1_id, "Blood Relative")
-    Char.assign_person(parent2_id, "Blood Relative")
-    and more
+    #person5 would be an unaffected, non blood relative male
+    Char.assign_person(person6_id, "Blood Relative") 
+    
     
     # Create relationships between individuals
     Rel.create_ifam(person3_id, person4_id) # Siblings
-    Rel.create_ifam(person3_id, parent_id, parent2_id) # Gen 0 and gen 1
-    Rel.create_ifam(person4_id, parent_id, parent2_id) # Gen 0 and gen 1
-    Rel.create_ifam(person6_id, person4_id, parent5_id) # Gen 1 and gen 2
+    Rel.create_ifam(person3_id, person1_id, person2_id) # Gen 0 and gen 1
+    Rel.create_ifam(person4_id, person1_id, person2_id) # Gen 0 and gen 1
+    Rel.create_ifam(person6_id, person4_id, person5_id) # Gen 1 and gen 2
     
     # Build the pedigree from the relationships
     PEDIGREE = Rel.create_pedigree()
@@ -250,13 +271,11 @@ if __name__ == "__main__":
     print("Pedigree:", PEDIGREE)
     
     # Initialize propositions for family members
-    f = Char.assign_person(person_id, "Female")   
-    a1 = Char.assign_person(person_id, "Affected")
-    a2 = Char.assign_person(parent1_id, "Affected")
-    a3 = Char.assign_person(parent2_id, "Affected")
-    r = Char.assign_person(person_id, "Blood Relative")
-    c = Rel.create_ifam(person_id, parent1_id, parent2_id)
-    s = Rel.create_ifam(person1_id, person2_id)
+    f = Char.assign_person(person1_id, "Female")   
+    a1 = Char.assign_person(person2_id, "Affected")
+    a2 = Char.assign_person(person4_id, "Affected")
+    c = Rel.create_ifam(person6_id, person4_id, person5_id)
+    s = Rel.create_ifam(person4_id, person3_id)
     m = MoreMaleAffected(1)
     r_mode = RecessiveDisease()
     x_mode = XLinkedDisease()
@@ -266,6 +285,6 @@ if __name__ == "__main__":
     T = T.compile()
 
     # Run the likelihood function as a test
-    likelihood_value = likelihood(E, recessive_disease_prop)
+    likelihood_value = likelihood(E, r_mode)
     print("Likelihood of recessive disease:", likelihood_value)
 
