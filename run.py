@@ -180,6 +180,24 @@ x_mode = XLinkedDisease()
 def theory():
     # If both parents of an affected family member are unaffected, then the disease is recessive
     E.add_constraint((a & c & (~a2 & ~a3)) >> r_mode)
+    # Recursive function to calculate male(i, k)
+    def male(i, k, propositions):
+        # Base cases
+        if i == 1 and k == 0:
+            return Female(propositions[i-1])
+        elif i == 1 and k == 1:
+            return ~Female(propositions[i-1])
+        # Recursive cases
+        if k > 0:
+            # Case 1: (male(i-1, k-1) /\ !Female(person_id))
+            case1 = male(i - 1, k - 1, propositions) & ~ Female(propositions[i-1])
+        else:
+            case1 = False  # Avoid invalid recursive calls for k < 0
+        
+        # Case 2: (male(i-1, k) /\ Female(person_id))
+        case2 = male(i - 1, k, propositions) & Female(propositions[i-1])
+        # Combine cases with OR
+        return case1 | case2
     #loops to list all possible cases where there a more male than female in a generation
     # Outer Loop for male
     # n should be number of blood relatives in a generation"
