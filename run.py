@@ -66,15 +66,13 @@ class Rel(object):
         # Add the completed family dictionary to IFAMILIES
         IFAMILIES.append(ifamily)
 
-
-
     @staticmethod
     def create_pedigree():
         PEDIGREE = {}  # Dictionary to store generational information
     
         # Divide PEOPLE into blood relatives and non-blood relatives
         list_BR = [id for id, details in PEOPLE.items() if details[1] == 1]  # Blood relatives
-        list_S = [id for id in PEOPLE if id not in list_BR]  # Non-blood relatives
+        list_NB = [id for id in PEOPLE if id not in list_BR]  # Non-blood relatives
     
         # Recursive function to process blood relatives in generations
         def process_generation(current_gen, previous_gen=None):
@@ -115,9 +113,9 @@ class Rel(object):
         # Start processing from generation 1
         process_generation(1)
     
-        # Process non-blood relatives in list_S once all blood relatives are processed
-        def process_siblings(last_gen):
-            while list_S:
+        # Process non-blood relatives in list_NB  once all blood relatives are processed
+        def process_nb(last_gen):
+            while list_NB:
                 for person_id in list_S[:]:
                     person = PEOPLE[person_id]
                     parents = IFAMILIES[person_id].get("parents", [])
@@ -132,8 +130,8 @@ class Rel(object):
                             list_S.remove(person_id)
                             break
     
-        # Process remaining siblings after blood relatives
-        process_siblings(len(PEDIGREE))
+        # Process non-blood relative after blood relatives
+        process_nb(len(PEDIGREE))
     
         return PEDIGREE
 
@@ -182,8 +180,18 @@ x_mode = XLinkedDisease()
 def theory():
     # If both parents of an affected family member are unaffected, then the disease is recessive
     E.add_constraint((a & c & (~a2 & ~a3)) >> r_mode)
-    
-    return E
+    #loops to list all possible cases where there a more male than female in a generation
+    # Outer Loop for male
+    # n should be number of blood relatives in a generation"
+    result=[]
+    for i in range(n):
+        m_count=M(n,i)
+        # inner loop for female
+        for j in range(n):
+            f_count=F(n,j)
+            #create constraint 
+            result.append( m_count & f_count )
+    E.add_constraint(m >> Or(result))
 
 #Template
 if __name__ == "__main__":
