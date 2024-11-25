@@ -71,15 +71,13 @@ class Rel(object):
         # Add the completed family dictionary to IFAMILIES
         IFAMILIES.append(ifamily)
 
-
-
     @staticmethod
     def create_pedigree():
         PEDIGREE = {}  # Dictionary to store generational information
     
         # Divide PEOPLE into blood relatives and non-blood relatives
         list_BR = [id for id, details in PEOPLE.items() if details[1] == 1]  # Blood relatives
-        list_S = [id for id in PEOPLE if id not in list_BR]  # Non-blood relatives
+        list_NB = [id for id in PEOPLE if id not in list_BR]  # Non-blood relatives
     
         # Recursive function to process blood relatives in generations
         def process_generation(current_gen, previous_gen=None):
@@ -120,9 +118,9 @@ class Rel(object):
         # Start processing from generation 1
         process_generation(1)
     
-        # Process non-blood relatives in list_S once all blood relatives are processed
-        def process_siblings(last_gen):
-            while list_S:
+        # Process non-blood relatives in list_NB  once all blood relatives are processed
+        def process_nb(last_gen):
+            while list_NB:
                 for person_id in list_S[:]:
                     person = PEOPLE[person_id]
                     parents = IFAMILIES[person_id].get("parents", [])
@@ -137,8 +135,8 @@ class Rel(object):
                             list_S.remove(person_id)
                             break
     
-        # Process remaining siblings after blood relatives
-        process_siblings(len(PEDIGREE))
+        # Process non-blood relative after blood relatives
+        process_nb(len(PEDIGREE))
     
         return PEDIGREE
 
@@ -187,44 +185,37 @@ x_mode = XLinkedDisease()  # X-linked disease mode
 # Theory for Constraints
 def theory():
     # If both parents of an affected family member are unaffected, then the disease is recessive
-    recessive_tseitin = semantic_interface.Encoding()
-    x1 = recessive_tseitin.tseitin(a1 & c1, 'x1')  
-    x2 = recessive_tseitin.tseitin(~a2, 'x2')  
-    x3 = recessive_tseitin.tseitin(~a3,  'x3') 
-    x4 = recessive_tseitin.tseitin(x2 & x3, 'x4') 
-    x5 = recessive_tseitin.tseitin(x1 & x4, 'x5')  
-    x6 = recessive_tseitin.tseitin((x5 >> r_mode), 'x6')
-    recessive_tseitin.finalize(x6)  
-    E.add_constraint(x6)
-    
-    #if two children have the same parents, they are siblings
-    sibling_tseitin = semantic_interface.Encoding()
-    x1 = sibling_tseitin.tseitin(c1 & c2, 'x1')
-    x2 = sibling_tseitin.tseitin(x1>>s, 'x2')
-    x3 = sibling_tseitin.tseitin(s>>x1, 'x3')
-    x4 = sibling_tseitin.tseitin(x3 & x2, 'x4')
-    sibling_tseitin.finalize(x4)  
-    E.add_constraint(x4)
-    
-    #for there to be a child, there must be one male and one female parent
-    parentchild_tseitin = semantic_interface.Encoding()
-    x1 = parentchild_tseitin.tseitin(Char(parent1_id, "Female")  & ~Char(parent2_id, "Female") , 'x1')
-    x2 = parentchild_tseitin.tseitin(~Char(parent1_id, "Female")  & Char(parent2_id, "Female"), 'x2')
-    x3 = parentchild_tseitin.tseitin(x1|x2, 'x3')
-    x4 = parentchild_tseitin.tseitin(c1>>x3, 'x4')
-    parentchild_tseitin.finalize(x4)  
-    E.add_constraint(x4)
-    
-    #Parents cannot be blood relatives
-    pr_tseitin = semantic_interface.Encoding()
-    x1 = pr_tseitin.tseitin(Char(parent1_id, "Blood Relative")  & ~Char(parent2_id, "Blood Relative") , 'x1')
-    x2 = pr_tseitin.tseitin(~Char(parent1_id, "Blood Relative")  & Char(parent2_id, "Blood Relative"), 'x2')
-    x3 = pr_tseitin.tseitin(x1|x2, 'x3')
-    x4 = pr_tseitin.tseitin(c1>>x3, 'x4')
-    pr_tseitin.finalize(x4)  
-    E.add_constraint(x4)
-    
-    return E
+    E.add_constraint((a & c & (~a2 & ~a3)) >> r_mode)
+    # Recursive function to calculate male(i, k)
+    def male(i, k, propositions):
+        # Base cases
+        if i == 1 and k == 0:
+            return Female(propositions[i-1])
+        elif i == 1 and k == 1:
+            return ~Female(propositions[i-1])
+        # Recursive cases
+        if k > 0:
+            # Case 1: (male(i-1, k-1) /\ !Female(person_id))
+            case1 = male(i - 1, k - 1, propositions) & ~ Female(propositions[i-1])
+        else:
+            case1 = False  # Avoid invalid recursive calls for k < 0
+        
+        # Case 2: (male(i-1, k) /\ Female(person_id))
+        case2 = male(i - 1, k, propositions) & Female(propositions[i-1])
+        # Combine cases with OR
+        return case1 | case2
+    #loops to list all possible cases where there a more male than female in a generation
+    # Outer Loop for male
+    # n should be number of blood relatives in a generation"
+    result=[]
+    for i in range(n):
+        m_count=M(n,i)
+        # inner loop for female
+        for j in range(n):
+            f_count=F(n,j)
+            #create constraint 
+            result.append( m_count & f_count )
+    E.add_constraint(m >> Or(result))
 
 if __name__ == "__main__":
     T = theory()
