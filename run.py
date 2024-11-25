@@ -10,15 +10,12 @@ config.sat_backend = "kissat"
 # Encoding that will store all of your constraints
 E = Encoding()
 
-PEDIGREE={} 
-#dictionary to store immediate family (siblings+parents)
-IFAMILIES=[]
-#dictionary to store individual family member (id, chars)
-PEOPLE={} 
-#amount of people in the family 
-FAMNUM=20
+PEDIGREE={} # Dictionary to store immediate family (siblings+parents)
+IFAMILIES=[] # Dictionary to store individual family member (id, chars)
+PEOPLE={} # Amount of people in the family 
+FAMNUM=20 # Total number of family members
 
-#generate a dictionary represent each family member as an unique integer 
+# Generate a dictionary represent each family member as an unique integer 
 def create_people(FAMNUM):
     i=1
     while i <=FAMNUM:
@@ -29,22 +26,28 @@ def create_people(FAMNUM):
 
 @proposition(E)
 class Char(object):
-    def assign_person(id, char):
+    def __init__(self, id, char):
+        self.id = id
+        self.char = char
         
-        characteristic=[0,0,0] #char[0]: bool for female, char[1]  : bool for blood relative, char[2]: bool for affected 
-        if char=="Female":
-            characteristic[0]=1
-        elif char=="Blood Relative":
-            characteristic[1]=1
-        elif char=="Affected":
-            characteristic[2]=1
-        PEOPLE["id"]=characteristic
-    def get_person():
+    @staticmethod
+    def assign_person(id, char):
+        # Assign the characterisitcs for each id in the PERSON list
         if id in PEOPLE:
-            if id <=FAMNUM:
-                return PEOPLE["id"]
+            if char == "Female":
+                PEOPLE[id][0] = 1
+            elif char == "Blood Relative":
+                PEOPLE[id][1] = 1
+            elif char == "Affected":
+                PEOPLE[id][2] = 1
+
+    @staticmethod
+    def get_person(id):
+        return PEOPLE.get(id, None)
+
     def _prop_name(self):
         return f"Char.{self.id}={self.char}"
+
 
 @proposition(E)
 class Rel(object):
@@ -58,8 +61,8 @@ class Rel(object):
             if person not in ifamily[list_name]:
                 ifamily[list_name].append(person)
 
-        # Two arguments case: add both to siblings
         if id3 is None:
+            # Two arguments case: add both to siblings
             add_to_list(id1, "siblings")
             add_to_list(id2, "siblings")
         else:
@@ -171,7 +174,7 @@ parent2_id = 3
 child2_id = 4 #sibling 
 generation = 3
 
-a1 = Char(child1_id, "Affected")
+a1 = Char(child1_id, "Affected") # Affected family member 1 (child 1)
 a2 = Char(parent1_id, "Affected")  # Affected family member 2 (parent)
 a3 = Char(parent2_id, "Affected")  # Affected family member 3 (another parent)
 c1 = Rel(child1_id, parent1_id, parent2_id)
@@ -185,7 +188,7 @@ x_mode = XLinkedDisease()  # X-linked disease mode
 # Theory for Constraints
 def theory():
     # If both parents of an affected family member are unaffected, then the disease is recessive
-    E.add_constraint((a & c & (~a2 & ~a3)) >> r_mode)
+    E.add_constraint((a1 & c1 & (~a2 & ~a3)) >> r_mode)
     # Recursive function to calculate male(i, k)
     def male(i, k, propositions):
         # Base cases
@@ -206,10 +209,11 @@ def theory():
         return case1 | case2
 
     def blood_relative():
-        # return the number of blood relatives in the family tree (all the member except those are "married" into the family tree)
+        # Return the number of blood relatives in the family tree (all the member except those are "married" into the family tree)
+        # Initialize the count for the blood relatives
         count = 0
         for generation, members in PEDIGREE.items():  # Iterate through generations and their members
-            for person_id, details in members.items():  # Iterate through members in the generation
+            for person_id, person_info in members.items():  # Iterate through members in the generation
                 parents = IFAMILIES[person_id].get("parents", [])
                 # Case 1: person has no parents and is in "gen 1"
                 if generation == "gen 1" and not parents:
