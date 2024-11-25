@@ -204,9 +204,15 @@ def theory():
         case2 = male(i - 1, k, propositions) & Female(propositions[i-1])
         # Combine cases with OR
         return case1 | case2
+
+    def blood_relative():
+        # return a varible that counts the number of blood relative in the family tree
+        n = 
+
+        
     #loops to list all possible cases where there a more male than female in a generation
     # Outer Loop for male
-    # n should be number of blood relatives in a generation"
+    # n should be number of blood relatives in a generation
     result=[]
     for i in range(n):
         m_count=M(n,i)
