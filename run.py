@@ -31,7 +31,7 @@ def create_people(FAMNUM):
 class Char(object):
     def assign_person(id, char):
         
-        characteristic=[0,0,0] #char[0]: bool for female, char[1]: bool for blood relative, char[2]: bool for affected 
+        characteristic=[0,0,0] #char[0]: bool for female, char[1]  : bool for blood relative, char[2]: bool for affected 
         if char=="Female":
             characteristic[0]=1
         elif char=="Blood Relative":
@@ -206,10 +206,20 @@ def theory():
         return case1 | case2
 
     def blood_relative():
-        # return a varible that counts the number of blood relative in the family tree
-        n = 
+        # return the number of blood relatives in the family tree (all the member except those are "married" into the family tree)
+        count = 0
+        for generation, members in PEDIGREE.items():  # Iterate through generations and their members
+            for person_id, details in members.items():  # Iterate through members in the generation
+                parents = IFAMILIES[person_id].get("parents", [])
+                # Case 1: person has no parents and is in "gen 1"
+                if generation == "gen 1" and not parents:
+                    count += 1
+                # Case 2: person is not in "gen 1" and has parents
+                elif generation != "gen 1" and parents:
+                    count += 1
+        return count
 
-        
+
     #loops to list all possible cases where there a more male than female in a generation
     # Outer Loop for male
     # n should be number of blood relatives in a generation
