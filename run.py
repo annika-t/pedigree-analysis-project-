@@ -170,8 +170,8 @@ class XLinkedDisease:
 
 child1_id = create_people()  # Assuming this is the id of the affected family member
 parent1_id = 2   # Assuming this is the id of one of the parents
-parent2_id = 3  
-child2_id = 4 #sibling 
+parent2_id = 3  # the other parent
+child2_id = 4 # sibling 
 generation = 3
 
 a1 = Char(child1_id, "Affected") # Affected family member 1 (child 1)
