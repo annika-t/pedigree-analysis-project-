@@ -51,29 +51,31 @@ class Char(object):
 
 @proposition(E)
 class Rel(object):
-    def create_ifam(id1, id2, id3=None):
-        # Initialize a family structure
-        ifamily = {"parents": [], "siblings": []}
+     def __init__(self, id1, id2, id3=None):
+        self.id1 = id1
+        self.id2 = id2
+        self.id3 = id3
+        self.ifamily = {"parents": [], "siblings": []}
+        self._build_relationship()
 
-        # Helper function to add a person to a list without duplicates
-        def add_to_list(person_id, list_name):
-            person = PEOPLE[person_id]
-            if person not in ifamily[list_name]:
-                ifamily[list_name].append(person)
-
-        if id3 is None:
-            # Two arguments case: add both to siblings
-            add_to_list(id1, "siblings")
-            add_to_list(id2, "siblings")
-        else:
-            # Three arguments case: first goes to siblings, second and third go to parents
-            add_to_list(id1, "siblings")
-            add_to_list(id2, "parents")
-            add_to_list(id3, "parents")
+    def _build_relationship(self):
+        if self.id3 is None:  # Sibling relationship
+            self.ifamily["siblings"].extend([self.id1, self.id2])
+        else:  # Parent-child relationship
+            self.ifamily["siblings"].append(self.id1)
+            self.ifamily["parents"].extend([self.id2, self.id3])
+        IFAMILIES.append(self.ifamily)
 
         # Add the completed family dictionary to IFAMILIES
         IFAMILIES.append(ifamily)
 
+    def _prop_name(self):
+            if self.id3:
+                return f"Rel({self.id1}, {self.id2}, {self.id3})"
+            return f"Rel({self.id1}, {self.id2})"
+
+
+    # Build the pedigree based on the relationships
     @staticmethod
     def create_pedigree():
         PEDIGREE = {}  # Dictionary to store generational information
