@@ -194,8 +194,8 @@ x_mode = XLinkedDisease()  # X-linked disease mode
 
 # Theory for Constraints
 def theory():
-    # Recursive function to calculate male(i, k)
-    def male(i, k, propositions):
+    # Recursive function to calculate male(i, k), the constraint of M(g)
+    def more_male_constraint(i, k, propositions):
         # Base cases
         if i == 1 and k == 0:
             return Female(propositions[i-1])
@@ -211,11 +211,11 @@ def theory():
         # Case 2: (male(i-1, k) /\ Female(person_id))
         case2 = male(i - 1, k, propositions) & Female(propositions[i-1])
         # Combine cases with OR
-        return case1 | case2
+        return constraint.Or(case1, case2)
     
     
     # Return the number of blood relatives in the family tree (all the member except those are "married" into the family tree)
-    def blood_relative():
+    def blood_relative_constraint():
         # Initialize the count for the blood relatives
         count = 0
         for generation, members in PEDIGREE.items():  # Iterate through generations and their members
@@ -227,12 +227,12 @@ def theory():
                 # Case 2: person is not in "gen 1" and has parents
                 elif generation != "gen 1" and parents:
                     count += 1
-        return count
+        return constraint.And(count)
         
     # If both parents of an affected family member are unaffected, then the disease is recessive
     E.add_constraint((a1 & c1 & (~a2 & ~a3)) >> r_mode)
     
-    #loops to list all possible cases where there a more male than female in a generation
+    # Loops to list all possible cases where there a more male than female in a generation
     # Outer Loop for male
     # n should be number of blood relatives in a generation
     result=[]
@@ -242,12 +242,22 @@ def theory():
         for j in range(n):
             f_count=F(n,j)
             #create constraint 
-            result.append( m_count & f_count )
+            result.append( m_count & f_count)
     E.add_constraint(m >> Or(result))
 
     # X-linked Disease: If there are more males in a generation than females, the M(g) is true, and male which carried this diesease is affected
-    E.add_constrainconstraints(>> x_mode)
+    def x_linked_disease_constraint():
+    total_generations = len(PEDIGREE)
+    half_generations = total_generations // 2
 
+    # Collect M(g) for all generations
+    mg_conditions = [
+        MoreMaleAffected(gen)
+        for gen in range(1, total_generations + 1)
+    ]
+
+    # If M(g) is true for at least half of the generations, X is true
+    E.add_constraint(constraint.Or(m) >> x_mode)
 
 
 if __name__ == "__main__":
