@@ -157,6 +157,11 @@ class MoreMaleAffected:
 #Inheritance Mode
 @proposition(E)
 class RecessiveDisease:
+    '''
+    Constraints: 
+    A person is affected and their parents are not. 
+    This must mean the parents are carriers of the trait and the trait is recessive
+    '''
     def _prop_name(self):
         return "R=True"
 
@@ -187,10 +192,11 @@ x_mode = XLinkedDisease()  # X-linked disease mode
 
 # Theory for Constraints
 def theory():
-    # If both parents of an affected family member are unaffected, then the disease is recessive
-    E.add_constraint((a1 & c1 & (~a2 & ~a3)) >> r_mode)
     # Recursive function to calculate male(i, k)
     def male(i, k, propositions):
+        '''
+        
+        '''
         # Base cases
         if i == 1 and k == 0:
             return Female(propositions[i-1])
@@ -209,7 +215,10 @@ def theory():
         return case1 | case2
 
     def blood_relative():
-        # Return the number of blood relatives in the family tree (all the member except those are "married" into the family tree)
+        '''
+        Return the number of blood relatives in the family tree 
+        (all the member except those are "married" into the family tree)
+        '''
         # Initialize the count for the blood relatives
         count = 0
         for generation, members in PEDIGREE.items():  # Iterate through generations and their members
@@ -223,7 +232,12 @@ def theory():
                     count += 1
         return count
 
-
+    '''
+    Constraints:
+    '''
+    # If both parents of an affected family member are unaffected, then the disease is recessive
+    E.add_constraint((a1 & c1 & (~a2 & ~a3)) >> r_mode)
+    
     #loops to list all possible cases where there a more male than female in a generation
     # Outer Loop for male
     # n should be number of blood relatives in a generation
@@ -236,6 +250,11 @@ def theory():
             #create constraint 
             result.append( m_count & f_count )
     E.add_constraint(m >> Or(result))
+
+    # X-linked Disease: If there are more males in a generation than females, the M(g) is true, and male which carried this diesease is affected
+    E.add_constrainconstraints(>> x_mode)
+
+
 
 if __name__ == "__main__":
     T = theory()
