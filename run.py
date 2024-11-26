@@ -192,51 +192,44 @@ r_mode = RecessiveDisease()                    # Recessive disease mode
 x_mode = XLinkedDisease()  # X-linked disease mode
 
 
+# Recursive function to calculate male(i, k)
+def male(i, k, propositions):
+    # Base cases
+    if i == 1 and k == 0:
+        return Female(propositions[i-1])
+    elif i == 1 and k == 1:
+        return ~Female(propositions[i-1])
+    # Recursive cases
+    if k > 0:
+        # Case 1: (male(i-1, k-1) /\ !Female(person_id))
+        case1 = male(i - 1, k - 1, propositions) & ~ Female(propositions[i-1])
+    else:
+        case1 = False  # Avoid invalid recursive calls for k < 0
+    
+    # Case 2: (male(i-1, k) /\ Female(person_id))
+    case2 = male(i - 1, k, propositions) & Female(propositions[i-1])
+    # Combine cases with OR
+    return case1 | case2
+
+
+# Return the number of blood relatives in the family tree (all the member except those are "married" into the family tree)
+def blood_relative():
+    # Initialize the count for the blood relatives
+    count = 0
+    for generation, members in PEDIGREE.items():  # Iterate through generations and their members
+        for person_id, person_info in members.items():  # Iterate through members in the generation
+            parents = IFAMILIES[person_id].get("parents", [])
+            # Case 1: person has no parents and is in "gen 1"
+            if generation == "gen 1" and not parents:
+                count += 1
+            # Case 2: person is not in "gen 1" and has parents
+            elif generation != "gen 1" and parents:
+                count += 1
+    return count
+
+
 # Theory for Constraints
 def theory():
-    # Recursive function to calculate male(i, k)
-    def male(i, k, propositions):
-        '''
-        
-        '''
-        # Base cases
-        if i == 1 and k == 0:
-            return Female(propositions[i-1])
-        elif i == 1 and k == 1:
-            return ~Female(propositions[i-1])
-        # Recursive cases
-        if k > 0:
-            # Case 1: (male(i-1, k-1) /\ !Female(person_id))
-            case1 = male(i - 1, k - 1, propositions) & ~ Female(propositions[i-1])
-        else:
-            case1 = False  # Avoid invalid recursive calls for k < 0
-        
-        # Case 2: (male(i-1, k) /\ Female(person_id))
-        case2 = male(i - 1, k, propositions) & Female(propositions[i-1])
-        # Combine cases with OR
-        return case1 | case2
-
-    def blood_relative():
-        '''
-        Return the number of blood relatives in the family tree 
-        (all the member except those are "married" into the family tree)
-        '''
-        # Initialize the count for the blood relatives
-        count = 0
-        for generation, members in PEDIGREE.items():  # Iterate through generations and their members
-            for person_id, person_info in members.items():  # Iterate through members in the generation
-                parents = IFAMILIES[person_id].get("parents", [])
-                # Case 1: person has no parents and is in "gen 1"
-                if generation == "gen 1" and not parents:
-                    count += 1
-                # Case 2: person is not in "gen 1" and has parents
-                elif generation != "gen 1" and parents:
-                    count += 1
-        return count
-
-    '''
-    Constraints:
-    '''
     # If both parents of an affected family member are unaffected, then the disease is recessive
     E.add_constraint((a1 & c1 & (~a2 & ~a3)) >> r_mode)
     
