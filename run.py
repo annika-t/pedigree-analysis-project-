@@ -50,18 +50,31 @@ def create_generation(g, ID):
         tuple: A dictionary with person IDs as keys and their attributes as values, and the updated ID.
     """
     count = 0  # Store the number of people in a generation
-    g_people = int(input(f"The total number of people in generation {g}: "))  # Get the number of people in the generation
+    if g>1:
+        g_people = int(input(f"The total number of people in generation {g}: "))  # Get the number of people in the generation
+    else:
+        g_people = 2
     generation_info = {}  # Initialize dictionary to store ids of people in the generation
-    generation_info[g] = []  # Create a list for this generation
+    generation_info["id"] = []  # Create a list for this generation
     
     for person_id in range(ID, ID + g_people):
         print(f"\nEnter information for Person {person_id} in Generation {g}:")
         
         # Get user input for each attribute
         is_male = input("Is the person male? (True/False): ").strip().lower() == 'true'
-        is_affected = input("Is the person affected by the trait? (True/False): ").strip().lower() == 'true'
-        is_blood_relative = input("Is the person a blood relative? (True/False): ").strip().lower() == 'true'
-        
+        if g==1:
+            is_blood_relative = True
+        else:
+            is_blood_relative = input("Is the person a blood relative? (True/False): ").strip().lower() == 'true'
+        if is_blood_relative:
+            is_affected = input("Is the person affected by the trait? (True/False): ").strip().lower() == 'true'
+            if g>1: #for generation grerater than 1
+                p1 =int(input("Enter ID of Parent 1: "))
+                p2 = int(input("Enter ID of Parent 2: "))
+                create_fam_units(person_id, p1, p2)# Add the person to the family unit
+        else:
+            is_affected = False
+            
         # Store the person's info in a dictionary called person
         person = {
             "is_male": is_male,
@@ -70,13 +83,8 @@ def create_generation(g, ID):
         }
         
         PEOPLE[person_id] = person
-        generation_info[g].append(person_id)  # Add the person ID to the generation list
-        
-        # If the generation is greater than 0, ask for parent IDs and store family information
-        if g > 0:
-            p1 = input("Enter ID of Parent 1: ")
-            p2 = input("Enter ID of Parent 2: ")
-            create_fam_units(person_id, p1, p2)  # Add the person to the family unit
+        generation_info["id"].append(person_id)  # Add the person ID to the generation list
+              
         count+=1
     # Update the ID for the next generation after processing all people in the current generation
     ID += g_people
@@ -88,9 +96,13 @@ def create_generation(g, ID):
 
 def generate_pedigree():
     global ID  # Ensure we modify the global ID variable
-    for g in range(1, GENERATION_COUNT + 1):  # Correct the range to start from 1
+    for g in range(1, GENERATION_COUNT + 1):  # Correct the range to start from 2
         generation_data, ID = create_generation(g, ID)  # Collect data for this generation and update ID
         GENERATION[g] = generation_data  # Store the generation information in the GENERATION dictionary
+        print(GENERATION)
+        print("\n")
+    print(PEOPLE)
+    print(FAMILIES)
 
 # Execute the program
 generate_pedigree()
