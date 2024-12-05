@@ -137,39 +137,41 @@ generate_pedigree()
 
 # Propositions for gender
 
-#@proposition(E)
+@proposition(E)
 class Male:
     def __init__(self, id):
         self.id = id
     def __repr__(self):
         return f"{self.id} is male"
-    def __invert__(self):
-        # Define the behavior of negation
-        return f"({self.id} is female)"
+    @classmethod
+    def _prop_name(cls):
+        # Return the name of the class as a callable method
+        return cls.__name__
     
 # Propositions for whether or not a person has a trait
-#@proposition(E)
+@proposition(E)
 class Affected:
     def __init__(self, id):
         self.id = id
     
     def __repr__(self):
-        return f"({self.id} is affected)"
-    
-    def __invert__(self):
-        # Define the behavior of negation
-        return f"({self.id} is not affected)"
+        return f"{self.id} is affected"
+    @classmethod
+    def _prop_name(cls):
+        # Return the name of the class as a callable method
+        return cls.__name__
 
 # Propositions for whether or not a person is a blood relative
-#@proposition(E)
+@proposition(E)
 class Blood_Relative:
     def __init__(self, id):
         self.id = id
     def __repr__(self):
         return f"{self.id} is a blood relative"
-    def __invert__(self):
-        # Define the behavior of negation
-        return f"({self.id} is not a blood relative)"
+    @classmethod
+    def _prop_name(cls):
+        # Return the name of the class as a callable method
+        return cls.__name__
 
 # Propositions to describe relationships between family members
 #@proposition(E)
@@ -216,12 +218,22 @@ class Affected_Male_Count:
     def __init__(self, p, m): 
         self.p = p
         self.m = m
+    def __invert__(self):
+        return f"Not Affected_Male_Count(generation={self.generation}, count={self.count})"
+
+    def _var(self):
+        return f"var_{self.generation}_{self.count}"
 
 #@proposition(E)
 class Affected_Female_Count:
     def __init__(self, p, m): 
         self.p = p
         self.m = m
+    def __invert__(self):
+        return f"Not Affected_Female_Count(generation={self.generation}, count={self.count})"
+
+    def _var(self):
+        return f"var_{self.generation}_{self.count}"
 
 
 # Add family unit propositions
@@ -244,8 +256,8 @@ for f in FAMILIES:
         else:
             children.append(~Affected(c))
     print("Children Propositions:", children)
-    family_unit_propositions[i] = (~And(*parents) & And(*one_family) & Or(*children))
-    print(f"Family {i} Proposition: {repr(family_unit_propositions[i])}")
+    family_unit_propositions[i] = (~And(parents) & And(one_family) & Or(children))
+    print(family_unit_propositions[i])
     i+=1
 
 def reccessive_theory(family_unit_propositions):
@@ -290,31 +302,33 @@ def count_affected_recursive(generation_proposition, g=1, male_m=0, female_m=0):
         return g, male_m, female_m
 
     # Process the current generation
-    for person_propositions in generation_proposition[g]:  # Loop through propositions for each person
-        person_id = GENERATION[g][generation_proposition[g].index(person_propositions)]  # Retrieve person ID
+    for idx, person_propositions in enumerate(generation_proposition[g]):  # Loop through propositions for each person
+        person_id = GENERATION[g]["id"][idx]  # Retrieve person ID
 
         # Define affected male and female conditions
-        affected_male = Affected(person_id) & Male(person_id) & Blood_Relative(person_id)
-        affected_female = Affected(person_id) & ~Male(person_id) & Blood_Relative(person_id)
+        affected_male = And(Affected(person_id), Male(person_id), Blood_Relative(person_id))
+        affected_female = And(Affected(person_id), ~Male(person_id), Blood_Relative(person_id))
 
         # Add constraints for affected males
-        E.add_constraint((person_propositions,And(person_propositions) >> affected_male) >> Affected_Male_Count(g, male_m + 1))
-        E.add_constraint((person_propositions,And(person_propositions) >> ~affected_male) >> Affected_Male_Count(g, male_m))
+        E.add_constraint(And(person_propositions, affected_male) >> Affected_Male_Count(g, male_m + 1))
+        E.add_constraint(And(person_propositions, ~affected_male) >> Affected_Male_Count(g, male_m))
 
         # Update male count if affected
-        if (person_propositions,And(person_propositions) >> affected_male).solve():
+        if And(person_propositions, affected_male).solve():
             male_m += 1
-
+    
         # Add constraints for affected females
-        E.add_constraint((person_propositions,And(person_propositions) >> affected_female) >> Affected_Female_Count(g, female_m + 1))
-        E.add_constraint((person_propositions,And(person_propositions) >> ~affected_female) >> Affected_Female_Count(g, female_m))
+        E.add_constraint(And(person_propositions, affected_female) >> Affected_Female_Count(g, female_m + 1))
+        E.add_constraint(And(person_propositions, ~affected_female) >> Affected_Female_Count(g, female_m))
 
         # Update female count if affected
-        if (person_propositions, And(person_propositions) >> affected_female).solve():
+        if (And(person_propositions, affected_female)).solve():
             female_m += 1
 
     # Recursive call for the next generation
     return count_affected_recursive(generation_proposition, g + 1, male_m, female_m)
+print("BYEEE")
+print(count_affected_recursive(generation_proposition))
 
 def create_all_more_male_combos(g):
     """
