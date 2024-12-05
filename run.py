@@ -10,6 +10,31 @@ FAMILIES = []  # List to store family units (sibling groups and parents)
 GENERATION = {}  # Dictionary to store generations
 ID = 1  # Variable to assign unique integer ID to each family member
 
+GENERATION={1: {'id': [1, 2], 'count': 2}, 
+2: {'id': [3, 4, 5, 6, 7, 8], 'count': 6}, 
+3: {'id': [9, 10, 11, 12, 13, 14], 'count': 6}}
+
+PEOPLE={1: {'is_male': True, 'is_affected': False, 'is_blood_relative': True}, 
+2: {'is_male': False, 'is_affected': True, 'is_blood_relative': True}, 
+3: {'is_male': True, 'is_affected': False, 'is_blood_relative': False}, 
+4: {'is_male': False, 'is_affected': False, 'is_blood_relative': True}, 
+5: {'is_male': True, 'is_affected': True, 'is_blood_relative': True}, 
+6: {'is_male': False, 'is_affected': False, 'is_blood_relative': False}, 
+7: {'is_male': False, 'is_affected': True, 'is_blood_relative': True}, 
+8: {'is_male': True, 'is_affected': False, 'is_blood_relative': False}, 
+9: {'is_male': False, 'is_affected': False, 'is_blood_relative': True}, 
+10: {'is_male': False, 'is_affected': False, 'is_blood_relative': True}, 
+11: {'is_male': False, 'is_affected': True, 'is_blood_relative': True}, 
+12: {'is_male': True, 'is_affected': True, 'is_blood_relative': True}, 
+13: {'is_male': True, 'is_affected': True, 'is_blood_relative': True}, 
+14: {'is_male': True, 'is_affected': False, 'is_blood_relative': True}}
+
+FAMILIES=[{'parents': [1, 2], 'children': [4, 5, 7]}, 
+{'parents': [3, 4], 'children': [9, 10]}, 
+{'parents': [5, 6], 'children': [11, 12]}, 
+{'parents': [7, 8], 'children': [13, 14]}] 
+
+
 # Ask for the number of generations in the tree
 GENERATION_COUNT = int(input("The total number of generations in the pedigree: "))
 
@@ -61,16 +86,18 @@ def create_generation(g, ID):
         print(f"\nEnter information for Person {person_id} in Generation {g}:")
         
         # Get user input for each attribute
-        is_male = input("Is the person male? (True/False): ").strip().lower() == 'true'
+        is_male = int(input("Is the person male? (True=1/False=0): ")) == 1
         if g==1:
             is_blood_relative = True
         else:
-            is_blood_relative = input("Is the person a blood relative? (True/False): ").strip().lower() == 'true'
+            is_blood_relative = int(input("Is the person a blood relative? (True=1/False=0): ")) == 1
         if is_blood_relative:
-            is_affected = input("Is the person affected by the trait? (True/False): ").strip().lower() == 'true'
+            is_affected = int(input("Is the person affected by the trait? (True=1/False=0): ")) == 1
             if g>1: #for generation grerater than 1
                 p1 =int(input("Enter ID of Parent 1: "))
                 p2 = int(input("Enter ID of Parent 2: "))
+                if p1>p2:
+                    p1, p2 = p2, p1
                 create_fam_units(person_id, p1, p2)# Add the person to the family unit
         else:
             is_affected = False
@@ -95,12 +122,13 @@ def create_generation(g, ID):
     return generation_info, ID
 
 def generate_pedigree():
-    global ID  # Ensure we modify the global ID variable
+    """global ID  # Ensure we modify the global ID variable
     for g in range(1, GENERATION_COUNT + 1):  # Correct the range to start from 2
         generation_data, ID = create_generation(g, ID)  # Collect data for this generation and update ID
         GENERATION[g] = generation_data  # Store the generation information in the GENERATION dictionary
         print(GENERATION)
-        print("\n")
+        print("\n")"""
+    
     print(PEOPLE)
     print(FAMILIES)
 
@@ -109,76 +137,87 @@ generate_pedigree()
 
 # Propositions for gender
 
-@proposition(E)
+#@proposition(E)
 class Male:
     def __init__(self, id):
         self.id = id
-    def _repr_(self):
+    def __repr__(self):
         return f"{self.id} is male"
+    def __invert__(self):
+        # Define the behavior of negation
+        return f"({self.id} is female)"
     
 # Propositions for whether or not a person has a trait
-@proposition(E)
+#@proposition(E)
 class Affected:
     def __init__(self, id):
         self.id = id
-    def _repr_(self):
-        return f"{self.id} is affected"
+    
+    def __repr__(self):
+        return f"({self.id} is affected)"
+    
+    def __invert__(self):
+        # Define the behavior of negation
+        return f"({self.id} is not affected)"
 
 # Propositions for whether or not a person is a blood relative
-@proposition(E)
+#@proposition(E)
 class Blood_Relative:
     def __init__(self, id):
         self.id = id
-    def _repr_(self):
+    def __repr__(self):
         return f"{self.id} is a blood relative"
+    def __invert__(self):
+        # Define the behavior of negation
+        return f"({self.id} is not a blood relative)"
 
 # Propositions to describe relationships between family members
-@proposition(E)
+#@proposition(E)
 class Child:
     def __init__(self, i, j, k):  # Child(i,j,k) is true if i is the child of j and k
         self.i = i
         self.j = j
         self.k = k
-    def _repr_(self):
+    def __repr__(self):
         return f"{self.i} is the child of {self.j} and {self.k}"
     
 # Propositions that will be true if there are more affected male relatives in a generation than female
-@proposition(E)
+#@proposition(E)
 class More_Male:
     def __init__(self, g):
         self.g = g
-    def _repr_(self):
+    def __repr__(self):
         return f"Generation {self.g} has more affected male relatives than female ones"
 
 # Propositions to describe mode of inheritance of the trait
-@proposition(E)
+#@proposition(E)
 class Recessive:
-    def _repr_(self):
+    def __repr__(self):
         return f"The trait is recessive"
 
-@proposition(E)
+#@proposition(E)
 class Dominant:
-    def _repr_(self):
+    def __repr__(self):
         return f"The trait is dominant"
 
-@proposition(E)
+#@proposition(E)
 class Autosomal:
-    def _repr_(self):
+    def __repr__(self):
        return f"The trait is autosomal"
 
-@proposition(E)
+#@proposition(E)
 class X_linked:
-    def _repr_(self):
+    def __repr__(self):
      return f"The trait is X linked"
 
 # Propositions for counting the number of affected male/female in a generation
-@proposition(E)
+#@proposition(E)
 class Affected_Male_Count:
     def __init__(self, p, m): 
         self.p = p
         self.m = m
 
-@proposition(E)
+#@proposition(E)
 class Affected_Female_Count:
     def __init__(self, p, m): 
         self.p = p
@@ -187,24 +226,27 @@ class Affected_Female_Count:
 
 # Add family unit propositions
 family_unit_propositions = {}
-for f in FAMILIES.item():
+i=1
+for f in FAMILIES:
     one_family=[]
     children=[]
     parents=[]
-    for p in f["parent"]:
-        parent = PEOPLE[p]
-        if parent["is_affected"]:
-            parent.append(Affected(p))
+    for p in f["parents"]:
+        if PEOPLE[p]["is_affected"]:
+            parents.append(Affected(p)) 
         else:
-            parent.append(~Affected(p))
+            parents.append(~Affected(p))
+    print("Parents Propositions:", parents)
     for c in f["children"]:
-        child=PEOPLE[p]
-        one_family.append(Child(child,f["parent"][0],f["parent"][1]))
-        if child["is_affected"]:
-            child.append(Affected(p))
+        one_family.append(Child(PEOPLE[c],f["parents"][0],f["parents"][1]))
+        if PEOPLE[c]["is_affected"]:
+            children.append(Affected(c))
         else:
-            child.append(~Affected(p))
-    family_unit_propositions[f].append(~And(parents) & And(one_family) & Or(children))
+            children.append(~Affected(c))
+    print("Children Propositions:", children)
+    family_unit_propositions[i] = (~And(*parents) & And(*one_family) & Or(*children))
+    print(f"Family {i} Proposition: {repr(family_unit_propositions[i])}")
+    i+=1
 
 def reccessive_theory(family_unit_propositions):
     E.add_constraint(Or(family_unit_propositions)>>Recessive)
@@ -216,7 +258,11 @@ def reccessive_theory(family_unit_propositions):
 generation_proposition = {}
 for g in range(1, len(GENERATION) + 1):
     generation_proposition[g] = []
-    for person_id in GENERATION[g]:
+    for person_id in GENERATION[g]["id"]:
+        if person_id not in PEOPLE:
+            raise KeyError(f"Person ID {person_id} not found in PEOPLE")
+        print(f"Processing generation {g}, person_id {person_id}")
+        print(f"Person data: {PEOPLE.get(person_id, 'Not found')}")
         person = PEOPLE[person_id]
         person_propositions = []
         
@@ -236,7 +282,9 @@ for g in range(1, len(GENERATION) + 1):
             person_propositions.append(~Blood_Relative(person_id))
         
         generation_proposition[g].append((person_propositions))
-
+        print(person_propositions)
+print(generation_proposition)
+        
 def count_affected_recursive(generation_proposition, g=1, male_m=0, female_m=0):
     if g > len(generation_proposition):  # Base case: all generations processed
         return g, male_m, female_m
