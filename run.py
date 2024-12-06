@@ -235,133 +235,154 @@ class Affected_Female_Count:
     def _var(self):
         return f"var_{self.generation}_{self.count}"
 
+def build_theory():
+    # Add family unit propositions
+    family_unit_propositions = {}
+    i=1
+    for f in FAMILIES:
+        one_family=[]
+        children=[]
+        parents=[]
+        for p in f["parents"]:
+            if PEOPLE[p]["is_affected"]:
+                parents.append(Affected(p)) 
+            else:
+                parents.append(~Affected(p))
+        print("Parents Propositions:", parents)
+        for c in f["children"]:
+            one_family.append(Child(PEOPLE[c],f["parents"][0],f["parents"][1]))
+            if PEOPLE[c]["is_affected"]:
+                children.append(Affected(c))
+            else:
+                children.append(~Affected(c))
+        print("Children Propositions:", children)
+        family_unit_propositions[i] = (~And(parents) & And(one_family) & Or(children))
+        print(family_unit_propositions[i])
+        i+=1
 
-# Add family unit propositions
-family_unit_propositions = {}
-i=1
-for f in FAMILIES:
-    one_family=[]
-    children=[]
-    parents=[]
-    for p in f["parents"]:
-        if PEOPLE[p]["is_affected"]:
-            parents.append(Affected(p)) 
+    def reccessive_theory(family_unit_propositions):
+        E.add_constraint(Or(family_unit_propositions)>>Recessive)
+        E.add_constraint(Recessive>> ~Dominant)
+        E.add_constraint(~Or(family_unit_propositions)>>Dominant)
+        E.add_constraint(Dominant>> ~Recessive)
+        if (Or(family_unit_propositions)>>Recessive).solve():
+            print("trait is recessive")
         else:
-            parents.append(~Affected(p))
-    print("Parents Propositions:", parents)
-    for c in f["children"]:
-        one_family.append(Child(PEOPLE[c],f["parents"][0],f["parents"][1]))
-        if PEOPLE[c]["is_affected"]:
-            children.append(Affected(c))
+            print("trait is dominant")
+
+    # Generate the propositions for each generation
+    generation_proposition = {}
+    for g in range(2, len(GENERATION) + 1): #skip first generation
+        generation_proposition[g] = []
+        for person_id in GENERATION[g]["id"]:
+            if person_id not in PEOPLE:
+                raise KeyError(f"Person ID {person_id} not found in PEOPLE")
+            print(f"Processing generation {g}, person_id {person_id}")
+            print(f"Person data: {PEOPLE.get(person_id, 'Not found')}")
+            person = PEOPLE[person_id]
+            person_propositions = []
+            
+            if person["is_affected"]:
+                person_propositions.append(Affected(person_id))
+            else:
+                person_propositions.append(~Affected(person_id))
+            
+            if person["is_male"]:
+                person_propositions.append(Male(person_id))
+            else:
+                person_propositions.append(~Male(person_id))
+            
+            if person["is_blood_relative"]:
+                person_propositions.append(Blood_Relative(person_id))
+            else:
+                person_propositions.append(~Blood_Relative(person_id))
+            
+            generation_proposition[g].append((person_propositions))
+            print(person_propositions)
+    print(generation_proposition)
+            
+    def count_affected_recursive(g,gender):
+        male_m=0
+        female_m=0
+        if gender=="female":
+            for idx, person_propositions in enumerate(generation_proposition[g]):  # Loop through propositions for each person
+                person_id = GENERATION[g]["id"][idx]  # Retrieve person ID
+                # Define affected female conditions
+                affected_female = And(Affected(person_id), ~Male(person_id), Blood_Relative(person_id))
+                # Add constraints for affected females
+                E.add_constraint(And(person_propositions), affected_female >> Affected_Female_Count(g, female_m + 1))
+                E.add_constraint(And(person_propositions), ~affected_female >> Affected_Female_Count(g, female_m))
+                # Update female count if affected
+                if (And(person_propositions), affected_female).solve():
+                    female_m += 1 
+            final_affected_female_count=Affected_Female_Count(g, female_m)
+            return final_affected_female_count
+        if gender=="male":
+            for idx, person_propositions in enumerate(generation_proposition[g]):  # Loop through propositions for each person
+                person_id = GENERATION[g]["id"][idx]  # Retrieve person ID
+                # Define affected male conditions
+                affected_male = And(Affected(person_id), Male(person_id), Blood_Relative(person_id))
+                # Add constraints for affected males
+                E.add_constraint(And(person_propositions), affected_male >> Affected_Male_Count(g, male_m + 1))
+                E.add_constraint(And(person_propositions), ~affected_male >> Affected_Male_Count(g, male_m))
+
+                # Update male count if affected
+                if (And(person_propositions), affected_male).solve():
+                    male_m += 1
+            final_affected_male_count=Affected_Male_Count(g, male_m)
+            return final_affected_male_count   
+    print("BYEEE")
+    print(count_affected_recursive(g))
+        
+    def create_all_more_male_combos(g):
+        """
+        Create all combinations where the number of affected males (m) is greater than 
+        the number of affected females (f), and the total number of affected individuals
+        does not exceed g.
+        
+        Parameters:
+            g (int): Total number of affected individuals.
+        
+        Returns:
+            list: All valid combinations as logical expressions.
+        """
+        all_combos = []
+        
+        for m in range(1, g + 1):  # Affected males from 1 to g
+            combos = []
+            affected_m_prop = Affected_Male_Count(g, m)
+            for f in range(m):  # Affected females less than affected males
+                if m + f <= g :  # Ensure the total does not exceed g
+                    affected_f_prop = Affected_Female_Count(g, f)
+                    one_combo = affected_m_prop & affected_f_prop
+                    combos.append(one_combo)
+            
+            # Combine all female combos for the current male count
+            if combos:  # Avoid appending empty Or() expressions
+                all_combos.append(Or(combos))
+        
+        return all_combos
+
+    def x_linked_theory(generation_proposition):
+        more_male_affected_in_every_generation=[]
+        for g in generation_proposition:
+            more_male_combo= create_all_more_male_combos(g)
+            more_male_affected_in_every_generation.append(count_affected_recursive(g,"male") & count_affected_recursive(g,"female"), more_male_combo >> More_Male )
+        E.add_constraint(And(more_male_affected_in_every_generation)>>X_linked)
+        E.add_constraint(~And(more_male_affected_in_every_generation)>>Autosomal)
+        E.add_constraint(And(Autosomal>>~X_linked))
+        E.add_constraint(~And(X_linked>>~Autosomal))
+        if (And(more_male_affected_in_every_generation)>>X_linked).solve():
+            print("trait is X_linked")
         else:
-            children.append(~Affected(c))
-    print("Children Propositions:", children)
-    family_unit_propositions[i] = (~And(parents) & And(one_family) & Or(children))
-    print(family_unit_propositions[i])
-    i+=1
-
-def reccessive_theory(family_unit_propositions):
-    E.add_constraint(Or(family_unit_propositions)>>Recessive)
-    E.add_constraint(Recessive>> ~Dominant)
-    E.add_constraint(~Or(family_unit_propositions)>>Dominant)
-    E.add_constraint(Dominant>> ~Recessive)
-
-# Generate the propositions for each generation
-generation_proposition = {}
-for g in range(1, len(GENERATION) + 1):
-    generation_proposition[g] = []
-    for person_id in GENERATION[g]["id"]:
-        if person_id not in PEOPLE:
-            raise KeyError(f"Person ID {person_id} not found in PEOPLE")
-        print(f"Processing generation {g}, person_id {person_id}")
-        print(f"Person data: {PEOPLE.get(person_id, 'Not found')}")
-        person = PEOPLE[person_id]
-        person_propositions = []
-        
-        if person["is_affected"]:
-            person_propositions.append(Affected(person_id))
-        else:
-            person_propositions.append(~Affected(person_id))
-        
-        if person["is_male"]:
-            person_propositions.append(Male(person_id))
-        else:
-            person_propositions.append(~Male(person_id))
-        
-        if person["is_blood_relative"]:
-            person_propositions.append(Blood_Relative(person_id))
-        else:
-            person_propositions.append(~Blood_Relative(person_id))
-        
-        generation_proposition[g].append((person_propositions))
-        print(person_propositions)
-print(generation_proposition)
-        
-def count_affected_recursive(generation_proposition, g=1, male_m=0, female_m=0):
-    if g > len(generation_proposition):  # Base case: all generations processed
-        return g, male_m, female_m
-
-    # Process the current generation
-    for idx, person_propositions in enumerate(generation_proposition[g]):  # Loop through propositions for each person
-        person_id = GENERATION[g]["id"][idx]  # Retrieve person ID
-
-        # Define affected male and female conditions
-        affected_male = And(Affected(person_id), Male(person_id), Blood_Relative(person_id))
-        affected_female = And(Affected(person_id), ~Male(person_id), Blood_Relative(person_id))
-
-        # Add constraints for affected males
-        E.add_constraint(And(person_propositions, affected_male) >> Affected_Male_Count(g, male_m + 1))
-        E.add_constraint(And(person_propositions, ~affected_male) >> Affected_Male_Count(g, male_m))
-
-        # Update male count if affected
-        if And(person_propositions, affected_male).solve():
-            male_m += 1
+            print("trait is autosomal")
     
-        # Add constraints for affected females
-        E.add_constraint(And(person_propositions, affected_female) >> Affected_Female_Count(g, female_m + 1))
-        E.add_constraint(And(person_propositions, ~affected_female) >> Affected_Female_Count(g, female_m))
 
-        # Update female count if affected
-        if (And(person_propositions, affected_female)).solve():
-            female_m += 1
 
-    # Recursive call for the next generation
-    return count_affected_recursive(generation_proposition, g + 1, male_m, female_m)
-print("BYEEE")
-print(count_affected_recursive(generation_proposition))
-
-def create_all_more_male_combos(g):
-    """
-    Create all combinations where the number of affected males (m) is greater than 
-    the number of affected females (f), and the total number of affected individuals
-    does not exceed g.
-    
-    Parameters:
-        g (int): Total number of affected individuals.
-    
-    Returns:
-        list: All valid combinations as logical expressions.
-    """
-    all_combos = []
-    
-    for m in range(1, g + 1):  # Affected males from 1 to g
-        combos = []
-        affected_m_prop = Affected_Male_Count(g, m)
-        for f in range(m):  # Affected females less than affected males
-            if m + f <= g :  # Ensure the total does not exceed g
-                affected_f_prop = Affected_Female_Count(g, f)
-                one_combo = affected_m_prop & affected_f_prop
-                combos.append(one_combo)
-        
-        # Combine all female combos for the current male count
-        if combos:  # Avoid appending empty Or() expressions
-            all_combos.append(Or(combos))
-    
-    return all_combos
-
-def x_linked_theory(generation_proposition):
-    return 
-
+if __name__ == "__main__":
+    T=build_theory()
+    T=T.compile()
+    print()
 
         
 
