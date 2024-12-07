@@ -174,7 +174,7 @@ class Blood_Relative:
         return cls.__name__
 
 # Propositions to describe relationships between family members
-#@proposition(E)
+@proposition(E)
 class Child:
     def __init__(self, i, j, k):  # Child(i,j,k) is true if i is the child of j and k
         self.i = i
@@ -184,7 +184,7 @@ class Child:
         return f"{self.i} is the child of {self.j} and {self.k}"
     
 # Propositions that will be true if there are more affected male relatives in a generation than female
-#@proposition(E)
+@proposition(E)
 class More_Male:
     def __init__(self, g):
         self.g = g
@@ -192,28 +192,28 @@ class More_Male:
         return f"Generation {self.g} has more affected male relatives than female ones"
 
 # Propositions to describe mode of inheritance of the trait
-#@proposition(E)
+@proposition(E)
 class Recessive:
     def __repr__(self):
         return f"The trait is recessive"
 
-#@proposition(E)
+@proposition(E)
 class Dominant:
     def __repr__(self):
         return f"The trait is dominant"
 
-#@proposition(E)
+@proposition(E)
 class Autosomal:
     def __repr__(self):
        return f"The trait is autosomal"
 
-#@proposition(E)
+@proposition(E)
 class X_linked:
     def __repr__(self):
      return f"The trait is X linked"
 
 # Propositions for counting the number of affected male/female in a generation
-#@proposition(E)
+@proposition(E)
 class Affected_Male_Count:
     def __init__(self, p, m): 
         self.p = p
@@ -224,7 +224,7 @@ class Affected_Male_Count:
     def _var(self):
         return f"var_{self.generation}_{self.count}"
 
-#@proposition(E)
+@proposition(E)
 class Affected_Female_Count:
     def __init__(self, p, m): 
         self.p = p
