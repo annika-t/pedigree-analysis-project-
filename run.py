@@ -138,83 +138,71 @@ generate_pedigree()
 # Propositions for gender
 
 @proposition(E)
-class Male:
+class Male(object):
     def __init__(self, id):
         self.id = id
-    def __repr__(self):
+    def _prop_name(self):
         return f"{self.id} is male"
-    @classmethod
-    def _prop_name(cls):
-        # Return the name of the class as a callable method
-        return cls.__name__
     
 # Propositions for whether or not a person has a trait
 @proposition(E)
-class Affected:
+class Affected(object):
     def __init__(self, id):
         self.id = id
-    
-    def __repr__(self):
-        return f"{self.id} is affected"
-    @classmethod
-    def _prop_name(cls):
+    def _prop_name(self):
         # Return the name of the class as a callable method
-        return cls.__name__
+        return f"{self.id} is affected"
 
 # Propositions for whether or not a person is a blood relative
 @proposition(E)
-class Blood_Relative:
+class Blood_Relative(object):
     def __init__(self, id):
         self.id = id
-    def __repr__(self):
+    def _prop_name(self):
         return f"{self.id} is a blood relative"
-    @classmethod
-    def _prop_name(cls):
-        # Return the name of the class as a callable method
-        return cls.__name__
-
+        
 # Propositions to describe relationships between family members
 @proposition(E)
-class Child:
+class Child(object):
     def __init__(self, i, j, k):  # Child(i,j,k) is true if i is the child of j and k
         self.i = i
         self.j = j
         self.k = k
-    def __repr__(self):
+    def _prop_name(self):
         return f"{self.i} is the child of {self.j} and {self.k}"
     
 # Propositions that will be true if there are more affected male relatives in a generation than female
 @proposition(E)
-class More_Male:
+class More_Male(object):
     def __init__(self, g):
         self.g = g
-    def __repr__(self):
+    def _prop_name(self):
         return f"Generation {self.g} has more affected male relatives than female ones"
 
 # Propositions to describe mode of inheritance of the trait
 @proposition(E)
-class Recessive:
-    def __repr__(self):
+class Recessive(object):
+     def _prop_name(self):
         return f"The trait is recessive"
 
 @proposition(E)
-class Dominant:
-    def __repr__(self):
+class Dominant(object):
+    def _prop_name(self):
         return f"The trait is dominant"
 
 @proposition(E)
-class Autosomal:
-    def __repr__(self):
-       return f"The trait is autosomal"
+class Autosomal(object):
+    def _prop_name(self):
+        return f"The trait is autosomal"
 
 @proposition(E)
-class X_linked:
-    def __repr__(self):
-     return f"The trait is X linked"
+class X_linked(object):
+    def _prop_name(self):
+         return f"The trait is X linked"
 
 # Propositions for counting the number of affected male/female in a generation
 @proposition(E)
-class Affected_Male_Count:
+class Affected_Male_Count(object):
     def __init__(self, p, m): 
         self.p = p
         self.m = m
