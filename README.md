@@ -1,58 +1,179 @@
-# CISC/CMPE 204 Modelling Project
+# Genetic Inheritance Pattern Analyzer
+### CISC/CMPE 204 Modelling Project
 
-Welcome to the major project for CISC/CMPE 204!
+## Overview
+This project implements a Boolean satisfiability (SAT) solver to analyze genetic inheritance patterns in family pedigrees. It determines whether traits follow recessive/dominant and X-linked/autosomal inheritance by examining multi-generational family data.
 
-Change this README.md file to summarize your project, and provide pointers to the general structure of the repository. How you organize and build things (which files, how you structure things, etc) is entirely up to you! The only things you must keep in place are what is already listed in the **Structure** section below.
+## Theory and Analysis Approach
 
-## Structure
+### Default Theory Constraints
+The program builds two separate theories to test inheritance patterns:
 
-* `documents`: Contains folders for both of your draft and final submissions. README.md files are included in both.
-* `run.py`: General wrapper script that you can choose to use or not. Only requirement is that you implement the one function inside of there for the auto-checks.
-* `test.py`: Run this file to confirm that your submission has everything required. This essentially just means it will check for the right files and sufficient theory size.
+1. **Recessive Theory**
+   - Tests for recessive inheritance by default
+   - If satisfiable: trait is RECESSIVE
+   - If unsatisfiable: trait is DOMINANT
+   - Key test: If unaffected parents have affected children, must be recessive
 
-## Running With Docker
+2. **X-linked Theory**
+   - Tests for X-linked inheritance by default
+   - If satisfiable: trait is X-LINKED
+   - If unsatisfiable: trait is AUTOSOMAL
+   - Key test: No generation should have more affected males than females
 
-By far the most reliable way to get things running is with [Docker](https://www.docker.com). This section runs through the steps and extra tips to running with Docker. You can remove this section for your final submission, and replace it with a section on how to run your project.
-
-1. First, download Docker https://www.docker.com/get-started
-
-2. Navigate to your project folder on the command line.
-
-3. We first have to build the course image. To do so use the command:
-`docker build -t cisc204 .`
-
-4. Now that we have the image we can run the image as a container by using the command: `docker run -it -v $(pwd):/PROJECT cisc204 /bin/bash`
-
-    `$(pwd)` will be the current path to the folder and will link to the container
-
-    `/PROJECT` is the folder in the container that will be tied to your local directory
-
-5. From there the two folders should be connected, everything you do in one automatically updates in the other. For the project you will write the code in your local directory and then run it through the docker command line. A quick test to see if they're working is to create a file in the folder on your computer then use the terminal to see if it also shows up in the docker container.
-
-### Mac Users w/ M1 Chips
-
-If you happen to be building and running things on a Mac with an M1 chip, then you will likely need to add the following parameter to both the build and run scripts:
+### Determining Inheritance Pattern
+Based on the satisfiability of both theories:
 
 ```
---platform linux/x86_64
+Recessive Theory | X-linked Theory | Inheritance Pattern
+----------------|-----------------|-------------------
+Satisfiable     | Satisfiable     | Recessive, X-linked
+Satisfiable     | Unsatisfiable   | Recessive, Autosomal
+Unsatisfiable   | Satisfiable     | Dominant, X-linked
+Unsatisfiable   | Unsatisfiable   | Dominant, Autosomal
 ```
 
-For example, the build command would become:
+## Repository Structure
+
+### Required Components
+* `documents/`: Contains draft and final submission materials
+* `run.py`: Core implementation of genetic theories
+* `test.py`: Verification script for submission requirements
+* `default_tree.py`: Default pedigree chart data
+* `pedigree_chart.svg`: svg representation of default pedigree chart 
+
+
+## Implementation Details
+
+### Key Data Structures
+```python
+# People Dictionary
+PEOPLE = {
+    id: {
+        'is_male': bool,
+        'is_affected': bool,
+        'is_blood_relative': bool
+    }
+}
+
+# Generation Dictionary
+GENERATION = {
+    gen_number: {
+        'id': [person_ids],
+        'count': total_count
+    }
+}
+# Families Dictionary
+FAMILIES = {
+    family_id: {
+        'parents': (parent1_id, parent2_id), # Tuple of parent IDs (None if no parents)
+        'children': [child_ids],            # List of child IDs in this family
+        'generation': gen_number,           # The generation number this family belongs to
+        'bloodline': bool                   # True if this family is part of the primary bloodline
+    }
+}
 
 ```
+
+### Recursive Counting Implementation
+The X-linked theory uses recursive counting where:
+```python
+n(i,k) represents k affected in first i people:
+- Base cases: n(1,0) and n(1,1)
+- Recursive: n(i,k) <-> ((n(i-1,k-1) & affected(i)) | (n(i-1,k) & !affected(i)))
+```
+
+## Running the Project
+
+### With Docker (Recommended)
+1. Build the Docker image:
+```bash
+docker build -t cisc204 .
+```
+
+2. Run the container:
+```bash
+# Mac/Linux
+docker run -it -v $(pwd):/PROJECT cisc204 /bin/bash
+
+# Windows PowerShell
+docker run -it -v ${PWD}:/PROJECT cisc204 /bin/bash
+
+# Windows CMD
+docker run -it -v "%cd%":/PROJECT cisc204 /bin/bash
+```
+
+3. Inside container, run:
+```bash
+python3 /PROJECT/run.py
+```
+
+### Platform-Specific Notes
+
+#### Mac M1/M2 Users
+Add platform parameter:
+```bash
 docker build --platform linux/x86_64 -t cisc204 .
+docker run --platform linux/x86_64 -it -v $(pwd):/PROJECT cisc204 /bin/bash
 ```
 
-### Mount on Different OS'
-
-In the run script above, the `-v $(pwd):/PROJECT` is used to mount the current directory to the container. If you are using a different OS, you may need to change this to the following:
-
-- Windows PowerShell: `-v ${PWD}:/PROJECT`
-- Windows CMD: `-v %cd%:/PROJECT`
-- Mac: `-v $(pwd):/PROJECT`
-
-Finally, if you are in a folder with a bunch of spaces in the absolute path, then it will break things unless you "quote" the current directory like this (e.g., on Windows CMD):
-
+#### Paths with Spaces
+Use quotes:
+```bash
+docker run -it -v "%cd%":/PROJECT cisc204 /bin/bash
 ```
-docker run -it -v "%cd%":/PROJECT cisc204
+
+## Example Output
 ```
+Genetic Inheritance Pattern Analyzer
+-----------------------------------
+
+Generation Statistics:
+Generation 1:
+- Affected Males: 0
+- Affected Females: 1
+
+Generation 2:
+- Affected Males: 2
+- Affected Females: 0
+
+Results:
+--------------------
+Inheritance Type: RECESSIVE
+Chromosome Type: AUTOSOMAL
+
+Evidence:
+- Unaffected parents have affected children
+- Male-to-male transmission observed
+```
+
+## Technical Limitations
+- Binary gender model for X-linked analysis
+- Single trait analysis only
+- Requires complete family data
+- Cannot handle:
+  - Incomplete penetrance
+  - Variable expressivity
+  - Multiple trait interactions
+
+## Future Development
+- Multiple trait analysis
+- Incomplete penetrance support
+- Visual pedigree representation
+- Statistical confidence measures
+- Data import/export functionality
+  
+## Authors
+- Nicole Wu
+    - Email: 22ll20@queensu.ca
+- Sophie Liang
+    - Email: 22whr@queensu.ca
+- Tracy Chan
+    - Email: 22thb2@queensu.ca
+- Annika Tran
+    - Email: 23lm5@queensu.ca
+## Acknowledgments
+- CISC/CMPE 204 course materials
+- Bauhaus SAT solver library
+- NNF library
+
