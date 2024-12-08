@@ -24,9 +24,21 @@ def build_recessive_theory():
     """
     Builds theory to test if inheritance is recessive.
     Theory is unsatisfiable if any affected child has unaffected parents.
+    Additional constraints ensure biological validity:
+    - Parents must be of different sex (using Male proposition)
+    - Parents cannot be blood related
     """
     E = Encoding()
-    
+    @proposition(E)
+    class Male(Hashable):
+        def __init__(self, id):
+            self.id = id
+        def __str__(self):
+            return f"{self.id} is male"
+        @classmethod
+        def _prop_name(cls):
+            return "Male"
+        
     @proposition(E)
     class Affected(Hashable):
         def __init__(self, id):
@@ -49,15 +61,43 @@ def build_recessive_theory():
         def _prop_name(cls):
             return "Child"
 
-    # Create affected status propositions
+    @proposition(E)
+    class BloodRelated(Hashable):
+        def __init__(self, id):
+            self.id = id
+        def __str__(self):
+            return f"{self.id} is blood related"
+        @classmethod
+        def _prop_name(cls):
+            return "BloodRelated"
+
+    # Create propositions
     affected_props = {}
+    male_props = {}
+    blood_related_props = {}
     for pid, person in PEOPLE.items():
         affected = Affected(pid)
+        male = Male(pid)
+        blood_related = BloodRelated(pid)
+        
         affected_props[pid] = affected
+        male_props[pid] = male
+        blood_related_props[pid] = blood_related
+        
         if person['is_affected']:
             E.add_constraint(affected)
         else:
             E.add_constraint(~affected)
+            
+        if person['is_male']:
+            E.add_constraint(male)
+        else:
+            E.add_constraint(~male)
+            
+        if person['is_blood_relative']:
+            E.add_constraint(blood_related)
+        else:
+            E.add_constraint(~blood_related)
 
     # Add inheritance pattern constraints
     for family in FAMILIES:
@@ -66,10 +106,16 @@ def build_recessive_theory():
             # Add child relationship
             E.add_constraint(Child(child, p1, p2))
             
+            # Validate parent sex difference using Male proposition
+            # One parent must be male and one must be female
+            E.add_constraint((male_props[p1] & ~male_props[p2]) | 
+                           (~male_props[p1] & male_props[p2]))
+                
+            # Validate parents not blood related
+            E.add_constraint(~(blood_related_props[p1] & blood_related_props[p2]))
+            
             # If unaffected parents have affected child -> must be recessive
-            if (PEOPLE[p1]['is_blood_relative'] and 
-                PEOPLE[p2]['is_blood_relative'] and 
-                not PEOPLE[p1]['is_affected'] and 
+            if (not PEOPLE[p1]['is_affected'] and 
                 not PEOPLE[p2]['is_affected'] and 
                 PEOPLE[child]['is_affected']):
                 E.add_constraint(affected_props[child] & 
@@ -77,16 +123,14 @@ def build_recessive_theory():
                                ~affected_props[p2])
     
     return E
-
 def build_xlinked_theory():
     """
-    Builds theory to test if inheritance is X-linked using recursive counting.
-    Uses n(i,k) to represent having k affected individuals in first i people.
-    Theory is unsatisfiable if any generation has more affected males than females.
+    Builds theory to test if inheritance is X-linked.
+    Theory is satisfiable if there are more affected males than females,
+    as this is characteristic of X-linked inheritance.
     """
     E = Encoding()
-
-    # Base propositions for gender and affected status
+    
     @proposition(E)
     class Male(Hashable):
         def __init__(self, id):
@@ -145,13 +189,6 @@ def build_xlinked_theory():
     def build_recursive_count(gen, people_list):
         """
         Builds recursive counting constraints for a generation.
-        
-        Args:
-            gen: Generation number
-            people_list: List of person IDs in the generation
-            
-        Returns:
-            MoreMale proposition if generation has more affected males than females
         """
         # Create base propositions
         male_props = {}
@@ -183,14 +220,12 @@ def build_xlinked_theory():
         pid1 = people_list[0]
         
         # Male counting base cases
-        # n(1,0) <-> !male(1) or !affected(1)
         male_counts[(1,0)] = MaleCount(gen, 1, 0)
         E.add_constraint(male_counts[(1,0)] >> 
             (~male_props[pid1] | ~affected_props[pid1]))
         E.add_constraint((~male_props[pid1] | ~affected_props[pid1]) >> 
             male_counts[(1,0)])
         
-        # n(1,1) <-> male(1) and affected(1)
         male_counts[(1,1)] = MaleCount(gen, 1, 1)
         E.add_constraint(male_counts[(1,1)] >> 
             (male_props[pid1] & affected_props[pid1]))
@@ -211,7 +246,6 @@ def build_xlinked_theory():
             female_counts[(1,1)])
         
         # Build recursive cases (i > 1)
-        # n(i,k) <-> ((n(i-1,k-1) & affected(i)) | (n(i-1,k) & !affected(i)))
         for i in range(2, N + 1):
             pid = people_list[i-1]
             
@@ -265,10 +299,10 @@ def build_xlinked_theory():
         more_male = MoreMale(gen)
         comparisons = []
         
-        # Compare final counts: more_male <-> exists k,m: k>m & male_count(k) & female_count(m)
+        # Compare final counts - true if more affected males
         for male_k in range(N + 1):
             for female_k in range(N + 1):
-                if male_k > female_k:
+                if male_k > female_k:  # Looking for more affected males
                     final_male = male_counts[(N, male_k)]
                     final_female = female_counts[(N, female_k)]
                     comparisons.append(final_male & final_female)
@@ -280,6 +314,7 @@ def build_xlinked_theory():
         return more_male
 
     # Process each generation after the first
+    has_male_bias = []
     for gen in GENERATION:
         if gen == 1:  # Skip first generation
             continue
@@ -289,11 +324,64 @@ def build_xlinked_theory():
         
         if people:  # Only process if generation has people
             more_male = build_recursive_count(gen, people)
-            # Theory unsatisfiable if more males found
-            E.add_constraint(~more_male)
+            has_male_bias.append(more_male)
+    
+    # Theory is satisfiable if at least one generation has more affected males
+    if has_male_bias:
+        E.add_constraint(Or(has_male_bias))
 
     return E
-
+def get_user_data():
+    """Get pedigree data from user input"""
+    generation = {}
+    people = {}
+    families = []
+    
+    num_generations = int(input("Enter number of generations: "))
+    
+    for gen in range(1, num_generations + 1):
+        generation[gen] = {'id': []}
+        num_people = int(input(f"Enter number of people in generation {gen}: "))
+        
+        for _ in range(num_people):
+            global ID
+            pid = ID
+            ID += 1
+            
+            is_male = input(f"Is person {pid} male? (y/n): ").lower() == 'y'
+            is_affected = input(f"Is person {pid} affected? (y/n): ").lower() == 'y'
+            is_blood = input(f"Is person {pid} blood relative? (y/n): ").lower() == 'y'
+            
+            people[pid] = {
+                'generation': gen,
+                'is_male': is_male,
+                'is_affected': is_affected,
+                'is_blood_relative': is_blood
+            }
+            
+            generation[gen]['id'].append(pid)
+    
+    # Get family relationships
+    if num_generations > 1:
+        for gen in range(2, num_generations + 1):
+            num_families = int(input(f"Enter number of families in generation {gen}: "))
+            
+            for _ in range(num_families):
+                p1 = int(input("Enter ID of first parent: "))
+                p2 = int(input("Enter ID of second parent: "))
+                num_children = int(input("Enter number of children: "))
+                
+                children = []
+                for _ in range(num_children):
+                    child = int(input("Enter ID of child: "))
+                    children.append(child)
+                
+                families.append({
+                    'parents': (p1, p2),
+                    'children': children
+                })
+    
+    return generation, people, families
 def main():
     """Main program execution"""
     global GENERATION, PEOPLE, FAMILIES
