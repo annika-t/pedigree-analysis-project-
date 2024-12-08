@@ -8,10 +8,10 @@ def get_default_data():
         2: {'id': [3, 4, 5, 6, 7, 8], 'count': 6},
         3: {'id': [9, 10, 11, 12, 13, 14], 'count': 6}
     }
-    
+
     people_data = {
-        1: {'is_male': True, 'is_affected': False, 'is_blood_relative': True},
-        2: {'is_male': False, 'is_affected': True, 'is_blood_relative': True},
+        1: {'is_male': True, 'is_affected': False, 'is_blood_relative': False},
+        2: {'is_male': False, 'is_affected': True, 'is_blood_relative': False},
         3: {'is_male': True, 'is_affected': False, 'is_blood_relative': False},
         4: {'is_male': False, 'is_affected': False, 'is_blood_relative': True},
         5: {'is_male': True, 'is_affected': True, 'is_blood_relative': True},
@@ -25,14 +25,13 @@ def get_default_data():
         13: {'is_male': True, 'is_affected': True, 'is_blood_relative': True},
         14: {'is_male': True, 'is_affected': False, 'is_blood_relative': True}
     }
-    
+
     families_data = [
-        {'parents': [1, 2], 'children': [4, 5, 7]},
+        {'parents': [1, 2], 'children': [4, 5]},
         {'parents': [3, 4], 'children': [9, 10]},
         {'parents': [5, 6], 'children': [11, 12]},
         {'parents': [7, 8], 'children': [13, 14]}
     ]
-    
     return generation_data, people_data, families_data
 
 # If you need to test the data structure directly
