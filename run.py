@@ -71,9 +71,12 @@ def get_user_data():
                 })
     
     return generation, people, families
-def build_parental_validity_theory():
+def build_test_invalid_pedigree():
     """
-    Builds theory to validate parental constraints using propositions
+    Builds theory to test for invalid pedigree conditions:
+    1. Parents are blood related and have children
+    2. Parents are same gender and have children
+    Theory is satisfiable if pedigree is invalid.
     """
     E = Encoding()
     
@@ -108,26 +111,63 @@ def build_parental_validity_theory():
         @classmethod
         def _prop_name(cls):
             return "Child"
+            
+    @proposition(E)
+    class InvalidPedigree(Hashable):
+        def __init__(self):
+            pass
+        def __str__(self):
+            return "Pedigree is invalid"
+        @classmethod
+        def _prop_name(cls):
+            return "InvalidPedigree"
 
+    # Create base propositions
     male_props = {}
     blood_props = {}
-
+    invalid = InvalidPedigree()
+    
+    # Add base facts for each person
     for pid in PEOPLE:
         male_props[pid] = Male(pid)
         blood_props[pid] = BloodRelated(pid)
+        
+        # Add gender constraints
+        if PEOPLE[pid]['is_male']:
+            E.add_constraint(male_props[pid])
+        else:
+            E.add_constraint(~male_props[pid])
+            
+        # Add blood relation constraints
+        if PEOPLE[pid]['is_blood_relative']:
+            E.add_constraint(blood_props[pid])
+        else:
+            E.add_constraint(~blood_props[pid])
 
+    # Add invalid pedigree constraints
+    invalid_conditions = []
+    
     for family in FAMILIES:
         p1, p2 = family['parents']
-        E.add_constraint(male_props[p1] if PEOPLE[p1]['is_male'] else ~male_props[p1])
-        E.add_constraint(male_props[p2] if PEOPLE[p2]['is_male'] else ~male_props[p2])
-        E.add_constraint(blood_props[p1] if PEOPLE[p1]['is_blood_relative'] else ~blood_props[p1])
-        E.add_constraint(blood_props[p2] if PEOPLE[p2]['is_blood_relative'] else ~blood_props[p2])
-
+        
         for child in family['children']:
             child_prop = Child(child, p1, p2)
             E.add_constraint(child_prop)
-            E.add_constraint(child_prop >> ((male_props[p1] & ~male_props[p2]) | (~male_props[p1] & male_props[p2])))
-            E.add_constraint(child_prop >> ~(blood_props[p1] & blood_props[p2]))
+            
+            # Both parents blood related condition
+            blood_related_parents = blood_props[p1] & blood_props[p2] & child_prop
+            invalid_conditions.append(blood_related_parents)
+            
+            # Same gender condition
+            same_gender = ((male_props[p1] & male_props[p2]) | 
+                         (~male_props[p1] & ~male_props[p2])) & child_prop
+            invalid_conditions.append(same_gender)
+
+    # Pedigree is invalid if any invalid condition is true
+    if invalid_conditions:
+        E.add_constraint(invalid >> Or(invalid_conditions))
+        E.add_constraint(Or(invalid_conditions) >> invalid)
+        E.add_constraint(invalid)
 
     return E
 
@@ -394,7 +434,6 @@ def build_xlinked_theory():
         E.add_constraint(Or(has_male_bias))
 
     return E
-
 def main():
     """Main program execution"""
     global GENERATION, PEOPLE, FAMILIES
@@ -409,28 +448,32 @@ def main():
     else:
         GENERATION, PEOPLE, FAMILIES = get_user_data()
     
-    # First validate parent relationships
-    print("\nValidating parental relationships...")
+    # First check if pedigree is valid
+    print("\nValidating pedigree structure...")
     try:
-        V = build_parental_validity_theory()
-        V = V.compile()
-        valid_parents = V.satisfiable()
+        I = build_test_invalid_pedigree()
+        I = I.compile()
+        is_invalid = I.satisfiable()
         
-        if not valid_parents:
-            print("\nInvalid pedigree: Parent constraints violated")
-            # Check each family for specific violations
+        if is_invalid:
+            print("\nInvalid pedigree structure detected!")
+            print("Pedigree must have:")
+            print("- Parents of different sex")
+            print("- Parents who are not both blood related")
+            
+            # Print specific violations
             for family in FAMILIES:
                 p1, p2 = family['parents']
                 if PEOPLE[p1]['is_male'] == PEOPLE[p2]['is_male']:
-                    print(f"Sex Error: Parents {p1} and {p2} have same sex")
+                    print(f"\nInvalid: Parents {p1} and {p2} are the same sex")
                     print(f"  Parent {p1} male: {PEOPLE[p1]['is_male']}")
                     print(f"  Parent {p2} male: {PEOPLE[p2]['is_male']}")
                 if PEOPLE[p1]['is_blood_relative'] and PEOPLE[p2]['is_blood_relative']:
-                    print(f"Blood Error: Parents {p1} and {p2} are both blood related")
+                    print(f"\nInvalid: Parents {p1} and {p2} are both blood related")
             return
         
-        print("Valid parental relationships confirmed")
-    
+        print("Valid pedigree structure confirmed")
+        
         # Print initial statistics
         print("\nGeneration Statistics:")
         for gen in sorted(GENERATION.keys()):
@@ -452,7 +495,7 @@ def main():
         # Analyze inheritance patterns
         print("\nAnalyzing inheritance patterns...")
         
-        # Build and analyze both theories
+        # Build and analyze inheritance theories
         R = build_recessive_theory()
         X = build_xlinked_theory()
         
@@ -492,7 +535,7 @@ def main():
             else:
                 print("Not more affected males than females -> suggests AUTOSOMAL")
             
-            # Check for recessive patterns in this generation
+            # Check for recessive patterns
             unaffected_parents_affected_child = False
             for family in FAMILIES:
                 p1, p2 = family['parents']
@@ -508,13 +551,6 @@ def main():
             else:
                 print("No unaffected parents with affected children -> suggests DOMINANT")
         
-        # Print final summary
-        print("\nFinal Analysis Summary:")
-        print("-" * 25)
-        inheritance_type = "RECESSIVE" if is_recessive else "DOMINANT"
-        chromosome_type = "X-LINKED" if is_xlinked else "AUTOSOMAL"
-        print(f"This pedigree shows a {chromosome_type} {inheritance_type} inheritance pattern")
-        
     except Exception as e:
         print(f"\nError during analysis: {str(e)}")
         return
@@ -523,4 +559,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
