@@ -20,7 +20,95 @@ class Hashable:
         return hash(self) == hash(other)
     def __repr__(self):
         return str(self)
+E = Encoding()
+    
+@proposition(E)
+class Male(Hashable):
+    def __init__(self, id):
+        self.id = id
+    def __str__(self):
+        return f"{self.id} is male"
+    @classmethod
+    def _prop_name(cls):
+        return "Male"
+        
+@proposition(E)
+class BloodRelated(Hashable):
+    def __init__(self, id):
+        self.id = id
+    def __str__(self):
+        return f"{self.id} is blood related"
+    @classmethod
+    def _prop_name(cls):
+        return "BloodRelated"
+    
+@proposition(E)
+class Affected(Hashable):
+    def __init__(self, id):
+        self.id = id
+    def __str__(self):
+        return f"{self.id} is affected"
+    @classmethod
+    def _prop_name(cls):
+        return "Affected"
+        
+@proposition(E)
+class Child(Hashable):
+    def __init__(self, child_id, parent1_id, parent2_id):
+        self.child = child_id
+        self.p1 = parent1_id
+        self.p2 = parent2_id
+    def __str__(self):
+        return f"{self.child} is child of {self.p1} and {self.p2}"
+    @classmethod
+    def _prop_name(cls):
+        return "Child"
+        
+@proposition(E)
+class InvalidPedigree(Hashable):
+    def __init__(self):
+        pass
+    def __str__(self):
+        return "Pedigree is invalid"
+    @classmethod
+    def _prop_name(cls):
+        return "InvalidPedigree"
+    
 
+@proposition(E)
+class MaleCount(Hashable):
+    def __init__(self, g, i, k):
+        self.g = g  # Generation
+        self.i = i  # Position in sequence (1-based)
+        self.k = k  # Count of affected males so far
+    def __str__(self):
+        return f"Gen {self.g}: first {self.i} people have {self.k} affected males"
+    @classmethod
+    def _prop_name(cls):
+        return "MaleCount"
+
+@proposition(E)
+class FemaleCount(Hashable):
+    def __init__(self, g, i, k):
+        self.g = g  # Generation
+        self.i = i  # Position in sequence (1-based)
+        self.k = k  # Count of affected females so far
+    def __str__(self):
+        return f"Gen {self.g}: first {self.i} people have {self.k} affected females"
+    @classmethod
+    def _prop_name(cls):
+        return "FemaleCount"
+
+@proposition(E)
+class MoreMale(Hashable):
+    def __init__(self, g):
+        self.g = g  # Generation
+    def __str__(self):
+        return f"Generation {self.g} has more affected males than females"
+    @classmethod
+    def _prop_name(cls):
+        return "MoreMale"
+    
 def get_user_data():
     """Get pedigree data from user input"""
     generation = {}
@@ -78,49 +166,7 @@ def build_test_invalid_pedigree():
     2. Parents are same gender and have children
     Theory is satisfiable if pedigree is invalid.
     """
-    E = Encoding()
     
-    @proposition(E)
-    class Male(Hashable):
-        def __init__(self, id):
-            self.id = id
-        def __str__(self):
-            return f"{self.id} is male"
-        @classmethod
-        def _prop_name(cls):
-            return "Male"
-            
-    @proposition(E)
-    class BloodRelated(Hashable):
-        def __init__(self, id):
-            self.id = id
-        def __str__(self):
-            return f"{self.id} is blood related"
-        @classmethod
-        def _prop_name(cls):
-            return "BloodRelated"
-            
-    @proposition(E)
-    class Child(Hashable):
-        def __init__(self, child_id, parent1_id, parent2_id):
-            self.child = child_id
-            self.p1 = parent1_id
-            self.p2 = parent2_id
-        def __str__(self):
-            return f"{self.child} is child of {self.p1} and {self.p2}"
-        @classmethod
-        def _prop_name(cls):
-            return "Child"
-            
-    @proposition(E)
-    class InvalidPedigree(Hashable):
-        def __init__(self):
-            pass
-        def __str__(self):
-            return "Pedigree is invalid"
-        @classmethod
-        def _prop_name(cls):
-            return "InvalidPedigree"
 
     # Create base propositions
     male_props = {}
@@ -177,29 +223,6 @@ def build_recessive_theory():
     Builds theory to test if inheritance is recessive.
     Theory is unsatisfiable if any affected child has unaffected parents.
     """
-    E = Encoding()
-    
-    @proposition(E)
-    class Affected(Hashable):
-        def __init__(self, id):
-            self.id = id
-        def __str__(self):
-            return f"{self.id} is affected"
-        @classmethod
-        def _prop_name(cls):
-            return "Affected"
-
-    @proposition(E)
-    class Child(Hashable):
-        def __init__(self, child_id, parent1_id, parent2_id):
-            self.child = child_id
-            self.p1 = parent1_id
-            self.p2 = parent2_id
-        def __str__(self):
-            return f"{self.child} is child of {self.p1} and {self.p2}"
-        @classmethod
-        def _prop_name(cls):
-            return "Child"
 
     # Create affected status propositions
     affected_props = {}
@@ -233,61 +256,6 @@ def build_xlinked_theory():
     Builds theory to test if inheritance is X-linked.
     Theory is satisfiable if there are more affected males than females.
     """
-    E = Encoding()
-    
-    @proposition(E)
-    class Male(Hashable):
-        def __init__(self, id):
-            self.id = id
-        def __str__(self):
-            return f"{self.id} is male"
-        @classmethod
-        def _prop_name(cls):
-            return "Male"
-
-    @proposition(E)
-    class Affected(Hashable):
-        def __init__(self, id):
-            self.id = id
-        def __str__(self):
-            return f"{self.id} is affected"
-        @classmethod
-        def _prop_name(cls):
-            return "Affected"
-
-    @proposition(E)
-    class MaleCount(Hashable):
-        def __init__(self, g, i, k):
-            self.g = g  # Generation
-            self.i = i  # Position in sequence (1-based)
-            self.k = k  # Count of affected males so far
-        def __str__(self):
-            return f"Gen {self.g}: first {self.i} people have {self.k} affected males"
-        @classmethod
-        def _prop_name(cls):
-            return "MaleCount"
-
-    @proposition(E)
-    class FemaleCount(Hashable):
-        def __init__(self, g, i, k):
-            self.g = g  # Generation
-            self.i = i  # Position in sequence (1-based)
-            self.k = k  # Count of affected females so far
-        def __str__(self):
-            return f"Gen {self.g}: first {self.i} people have {self.k} affected females"
-        @classmethod
-        def _prop_name(cls):
-            return "FemaleCount"
-
-    @proposition(E)
-    class MoreMale(Hashable):
-        def __init__(self, g):
-            self.g = g  # Generation
-        def __str__(self):
-            return f"Generation {self.g} has more affected males than females"
-        @classmethod
-        def _prop_name(cls):
-            return "MoreMale"
 
     def build_recursive_count(gen, people_list):
         """
