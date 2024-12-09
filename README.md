@@ -7,23 +7,38 @@ This project implements a Boolean satisfiability (SAT) solver to analyze genetic
 ## Theory and Analysis Approach
 
 ### Default Theory Constraints
-The program builds two separate theories to test inheritance patterns:
+The program builds three separate theories to test inheritance patterns:
 
-1. **Recessive Theory**
+1. **Invalid Pedigree Theory**
+   - Tests for biological validity of the pedigree structure
+   - If satisfiable: pedigree is INVALID
+   - If unsatisfiable: pedigree is VALID
+   - Key tests: 
+     * Parents must be of different sex
+     * Parents cannot both be blood related
+
+2. **Recessive Theory**
    - Tests for recessive inheritance by default
    - If satisfiable: trait is RECESSIVE
    - If unsatisfiable: trait is DOMINANT
    - Key test: If unaffected parents have affected children, must be recessive
 
-2. **X-linked Theory**
+3. **X-linked Theory**
    - Tests for X-linked inheritance by default
    - If satisfiable: trait is X-LINKED
    - If unsatisfiable: trait is AUTOSOMAL
    - Key test: No generation should have more affected males than females
 
 ### Determining Inheritance Pattern
-Based on the satisfiability of both theories:
-
+The analysis proceeds in steps:
+1. First, validate pedigree structure:
+```
+ Invalid Theory    | Result
+-----------------|------------------
+Satisfiable      | Invalid pedigree - analysis stops
+Unsatisfiable    | Valid pedigree - proceed with inheritance analysis
+3. Then analyze inheritance patterns based on the satisfiability of both theories:
+```
 ```
 Recessive Theory | X-linked Theory | Inheritance Pattern
 ----------------|-----------------|-------------------
@@ -35,7 +50,7 @@ Unsatisfiable   | Unsatisfiable   | Dominant, Autosomal
 
 ## Repository Structure
 
-### Required Components
+### Components
 * `documents/`: Contains draft and final submission materials
 * `run.py`: Core implementation of genetic theories
 * `test.py`: Verification script for submission requirements
@@ -127,6 +142,11 @@ docker run -it -v "%cd%":/PROJECT cisc204 /bin/bash
 ```
 Genetic Inheritance Pattern Analyzer
 -----------------------------------
+
+Validating pedigree structure...
+Valid pedigree structure confirmed
+- Parents are of different sex
+- No parents are blood related
 
 Generation Statistics:
 Generation 1:
