@@ -37,8 +37,9 @@ The analysis proceeds in steps:
 -----------------|------------------
 Satisfiable      | Invalid pedigree - analysis stops
 Unsatisfiable    | Valid pedigree - proceed with inheritance analysis
-3. Then analyze inheritance patterns based on the satisfiability of both theories:
+
 ```
+2.Then analyze inheritance patterns based on the satisfiability of both theories:
 ```
 Recessive Theory | X-linked Theory | Inheritance Pattern
 ----------------|-----------------|-------------------
