@@ -39,7 +39,7 @@ Satisfiable      | Invalid pedigree - analysis stops
 Unsatisfiable    | Valid pedigree - proceed with inheritance analysis
 
 ```
-2.Then analyze inheritance patterns based on the satisfiability of both theories:
+2. Then analyze inheritance patterns based on the satisfiability of both theories:
 ```
 Recessive Theory | X-linked Theory | Inheritance Pattern
 ----------------|-----------------|-------------------
@@ -143,29 +143,51 @@ docker run -it -v "%cd%":/PROJECT cisc204 /bin/bash
 ```
 Genetic Inheritance Pattern Analyzer
 -----------------------------------
+Use default values? (y/n): y
 
 Validating pedigree structure...
 Valid pedigree structure confirmed
-- Parents are of different sex
-- No parents are blood related
 
 Generation Statistics:
+
 Generation 1:
-- Affected Males: 0
-- Affected Females: 1
+Total Individuals: 2
+Affected Males: 0
+Affected Females: 0
 
 Generation 2:
-- Affected Males: 2
-- Affected Females: 0
+Total Individuals: 6
+Affected Males: 1
+Affected Females: 1
+
+Generation 3:
+Total Individuals: 6
+Affected Males: 2
+Affected Females: 1
+
+Analyzing inheritance patterns...
 
 Results:
 --------------------
-Inheritance Type: RECESSIVE
+Inheritance Type: DOMINANT
 Chromosome Type: AUTOSOMAL
 
-Evidence:
-- Unaffected parents have affected children
-- Male-to-male transmission observed
+Evidence by generation:
+
+Generation 2:
+Affected Males: 1
+Affected Females: 1
+Not more affected males than females -> suggests AUTOSOMAL
+No unaffected parents with affected children -> suggests DOMINANT
+
+Generation 3:
+Affected Males: 2
+Affected Females: 1
+More affected males than females -> suggests X-LINKED
+No unaffected parents with affected children -> suggests DOMINANT
+
+Analysis complete!
+
 ```
 
 ## Technical Limitations
