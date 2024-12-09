@@ -11,7 +11,7 @@ def get_default_data():
 
     people_data = {
         1: {'is_male': True, 'is_affected': False, 'is_blood_relative': False},
-        2: {'is_male': False, 'is_affected': True, 'is_blood_relative': False},
+        2: {'is_male': False, 'is_affected': True, 'is_blood_relative': True},
         3: {'is_male': True, 'is_affected': False, 'is_blood_relative': False},
         4: {'is_male': False, 'is_affected': False, 'is_blood_relative': True},
         5: {'is_male': True, 'is_affected': True, 'is_blood_relative': True},
